@@ -1,0 +1,149 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Represents a user (Admin, Faculty, or Student) in the system.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "faculty", "student"] },
+        "departmentId": { "type": "string", "description": "Reference to Department" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Department": {
+      "title": "Department",
+      "description": "Academic department.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "code": { "type": "string" }
+      },
+      "required": ["name", "code"]
+    },
+    "Subject": {
+      "title": "Subject",
+      "description": "A course or subject.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "code": { "type": "string" },
+        "departmentId": { "type": "string" },
+        "facultyId": { "type": "string", "description": "Assigned faculty UID" }
+      },
+      "required": ["name", "code", "departmentId"]
+    },
+    "Attendance": {
+      "title": "Attendance",
+      "description": "Daily attendance record.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "latitude": { "type": "number" },
+        "longitude": { "type": "number" },
+        "status": { "type": "string", "enum": ["present", "absent"] }
+      },
+      "required": ["studentId", "subjectId", "timestamp", "status"]
+    },
+    "Mark": {
+      "title": "Mark",
+      "description": "Student marks for a subject.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "internalMarks": { "type": "number" },
+        "externalMarks": { "type": "number" },
+        "totalMarks": { "type": "number" },
+        "grade": { "type": "string" }
+      },
+      "required": ["studentId", "subjectId"]
+    },
+    "Assignment": {
+      "title": "Assignment",
+      "description": "Assignment details.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "deadline": { "type": "string", "format": "date-time" },
+        "maxMarks": { "type": "number" }
+      },
+      "required": ["title", "subjectId", "deadline"]
+    },
+    "Submission": {
+      "title": "Submission",
+      "description": "Student assignment submission.",
+      "type": "object",
+      "properties": {
+        "assignmentId": { "type": "string" },
+        "studentId": { "type": "string" },
+        "fileUrl": { "type": "string" },
+        "submittedAt": { "type": "string", "format": "date-time" },
+        "marks": { "type": "number" },
+        "feedback": { "type": "string" },
+        "status": { "type": "string", "enum": ["submitted", "pending", "graded"] }
+      },
+      "required": ["assignmentId", "studentId", "fileUrl", "submittedAt", "status"]
+    },
+    "Lab": {
+      "title": "Lab",
+      "description": "Lab experiment tracking.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "difficulty": { "type": "string", "enum": ["easy", "medium", "hard"] },
+        "weight": { "type": "number" }
+      },
+      "required": ["title", "subjectId"]
+    },
+    "LabSubmission": {
+      "title": "Lab Submission",
+      "description": "Student lab proof.",
+      "type": "object",
+      "properties": {
+        "labId": { "type": "string" },
+        "studentId": { "type": "string" },
+        "proofUrl": { "type": "string" },
+        "githubLink": { "type": "string" },
+        "completedAt": { "type": "string", "format": "date-time" },
+        "score": { "type": "number" }
+      },
+      "required": ["labId", "studentId", "completedAt"]
+    },
+    "Video": {
+      "title": "Video",
+      "description": "Recorded class video.",
+      "type": "object",
+      "properties": {
+        "subjectId": { "type": "string" },
+        "facultyId": { "type": "string" },
+        "title": { "type": "string" },
+        "videoUrl": { "type": "string" },
+        "youtubeUrl": { "type": "string" },
+        "visibility": { "type": "string", "enum": ["private", "unlisted", "public"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["subjectId", "facultyId", "title", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users": { "schema": "User", "description": "User profiles" },
+    "departments": { "schema": "Department", "description": "Academic departments" },
+    "subjects": { "schema": "Subject", "description": "Subjects/Courses" },
+    "attendance": { "schema": "Attendance", "description": "Attendance logs" },
+    "marks": { "schema": "Mark", "description": "Student marks" },
+    "assignments": { "schema": "Assignment", "description": "Assignments" },
+    "submissions": { "schema": "Submission", "description": "Assignment submissions" },
+    "labs": { "schema": "Lab", "description": "Lab experiments" },
+    "lab_submissions": { "schema": "LabSubmission", "description": "Lab progress" },
+    "videos": { "schema": "Video", "description": "Class recordings" }
+  }
+}

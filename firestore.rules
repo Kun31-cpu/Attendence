@@ -1,0 +1,130 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    // Collection: users
+    // Fields: uid, email, displayName, role, departmentId, createdAt
+    //
+    // Collection: departments
+    // Fields: name, code
+    //
+    // Collection: subjects
+    // Fields: name, code, departmentId, facultyId
+    //
+    // Collection: attendance
+    // Fields: studentId, subjectId, timestamp, latitude, longitude, status
+    //
+    // Collection: marks
+    // Fields: studentId, subjectId, internalMarks, externalMarks, totalMarks, grade
+    //
+    // Collection: assignments
+    // Fields: title, description, subjectId, deadline, maxMarks
+    //
+    // Collection: submissions
+    // Fields: assignmentId, studentId, fileUrl, submittedAt, marks, feedback
+    //
+    // Collection: labs
+    // Fields: title, subjectId, difficulty, weight
+    //
+    // Collection: lab_submissions
+    // Fields: labId, studentId, proofUrl, githubLink, completedAt, score
+    //
+    // Collection: videos
+    // Fields: subjectId, facultyId, title, videoUrl, youtubeUrl, visibility, createdAt
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function hasRole(role) {
+      return isAuthenticated() && getUserData().role == role;
+    }
+
+    function isAdmin() {
+      return hasRole('admin') || (request.auth.token.email == "beraniranjan722@gmail.com" && request.auth.token.email_verified == true);
+    }
+
+    function isFaculty() {
+      return hasRole('faculty');
+    }
+
+    function isStudent() {
+      return hasRole('student');
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isOwner(userId) && request.resource.data.role == 'student'; // Default to student on self-reg
+      allow update: if isAdmin() || (isOwner(userId) && request.resource.data.role == resource.data.role);
+      allow delete: if isAdmin();
+    }
+
+    match /departments/{deptId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /subjects/{subjectId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /attendance/{attId} {
+      allow read: if isAdmin() || isFaculty() || (isStudent() && request.auth.uid == resource.data.studentId);
+      allow create: if isStudent() && request.auth.uid == request.resource.data.studentId;
+      allow update, delete: if isAdmin() || isFaculty();
+    }
+
+    match /marks/{markId} {
+      allow read: if isAdmin() || isFaculty() || (isStudent() && request.auth.uid == resource.data.studentId);
+      allow write: if isAdmin() || isFaculty();
+    }
+
+    match /assignments/{asgnId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() || isFaculty();
+    }
+
+    match /submissions/{subId} {
+      allow read: if isAdmin() || isFaculty() || (isStudent() && request.auth.uid == resource.data.studentId);
+      allow create: if isStudent() && request.auth.uid == request.resource.data.studentId;
+      allow update: if isAdmin() || isFaculty() || (isStudent() && request.auth.uid == resource.data.studentId && request.resource.data.marks == resource.data.marks);
+      allow delete: if isAdmin() || isFaculty();
+    }
+
+    match /labs/{labId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() || isFaculty();
+    }
+
+    match /lab_submissions/{labSubId} {
+      allow read: if isAdmin() || isFaculty() || (isStudent() && request.auth.uid == resource.data.studentId);
+      allow create: if isStudent() && request.auth.uid == request.resource.data.studentId;
+      allow update: if isAdmin() || isFaculty() || (isStudent() && request.auth.uid == resource.data.studentId && request.resource.data.score == resource.data.score);
+      allow delete: if isAdmin() || isFaculty();
+    }
+
+    match /videos/{videoId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() || isFaculty();
+    }
+  }
+}
