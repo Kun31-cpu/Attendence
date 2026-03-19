@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
+import { NotificationBell } from './NotificationBell';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
@@ -120,6 +121,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return true;
   });
 
+  // Bottom Nav items (subset of filteredNavItems for mobile)
+  const bottomNavItems = filteredNavItems.slice(0, 5);
+
   return (
     <div 
       className={cn(
@@ -215,14 +219,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Desktop Sidebar */}
       <aside className={cn(
-        "hidden md:flex flex-col w-72 backdrop-blur-2xl border-r p-8 transition-all duration-500",
+        "hidden md:flex flex-col w-72 backdrop-blur-3xl border-r p-8 transition-all duration-500 sticky top-0 h-screen",
         roleTheme.sidebar
       )}>
-        <div className="flex items-center gap-4 mb-12 px-2">
-          <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shadow-lg transition-colors duration-500", roleTheme.accent)}>
+        <div className="flex items-center gap-4 mb-12 px-2 group cursor-pointer">
+          <motion.div 
+            whileHover={{ scale: 1.1, rotate: 5 }}
+            className={cn("w-10 h-10 rounded-xl flex items-center justify-center shadow-lg transition-colors duration-500", roleTheme.accent)}
+          >
             <span className={cn("font-bold text-xl", profile?.role === 'admin' ? "text-black" : "text-white")}>E</span>
-          </div>
-          <span className="font-serif font-bold text-2xl tracking-tight">EduTrack</span>
+          </motion.div>
+          <span className="font-serif font-bold text-2xl tracking-tight group-hover:tracking-wider transition-all">EduTrack</span>
         </div>
 
         <nav className="flex-1 space-y-2">
@@ -231,12 +238,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               key={item.path}
               to={item.path}
               className={cn(
-                "flex items-center gap-4 px-5 py-3.5 rounded-2xl transition-all duration-300 group active:scale-95",
+                "flex items-center gap-4 px-5 py-3.5 rounded-2xl transition-all duration-300 group active:scale-95 relative",
                 location.pathname === item.path 
                   ? roleTheme.navActive
                   : roleTheme.navHover
               )}
             >
+              {location.pathname === item.path && (
+                <motion.div 
+                  layoutId="sidebar-active"
+                  className="absolute left-0 w-1 h-6 bg-current rounded-full"
+                />
+              )}
               <item.icon className={cn("w-5 h-5 transition-transform group-hover:scale-110", location.pathname === item.path ? "scale-110" : "")} />
               <span className="font-bold text-sm tracking-wide">{item.label}</span>
             </Link>
@@ -339,19 +352,55 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
 
-      {/* Mobile Header */}
-      <div className={cn(
-        "md:hidden fixed top-0 left-0 right-0 h-20 border-b flex items-center justify-between px-8 z-50 backdrop-blur-xl transition-all duration-500",
-        roleTheme.sidebar
+      {/* Desktop & Mobile Header */}
+      <header className={cn(
+        "fixed top-0 right-0 h-20 border-b flex items-center justify-between px-8 z-50 backdrop-blur-xl transition-all duration-500",
+        "left-0 md:left-72",
+        roleTheme.sidebar,
+        "shadow-sm"
       )}>
-        <span className="font-serif font-bold text-2xl tracking-tight">EduTrack</span>
-        <button 
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className={cn("p-2 rounded-xl transition-colors", profile?.role === 'admin' ? "bg-white/5" : "bg-gray-100")}
-        >
-          {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
-      </div>
+        <div className="flex items-center gap-4">
+          <motion.span 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="md:hidden font-serif font-bold text-2xl tracking-tight"
+          >
+            EduTrack
+          </motion.span>
+          {profile?.role === 'admin' && (
+            <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10">
+              <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">Admin Mode</span>
+            </div>
+          )}
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <NotificationBell />
+          
+          <div className="h-8 w-px bg-current opacity-10 mx-2 hidden md:block" />
+          
+          <button 
+            onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+            className="flex items-center gap-3 hover:bg-black/5 dark:hover:bg-white/5 p-1.5 rounded-2xl transition-all group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center overflow-hidden shadow-inner group-hover:scale-105 transition-transform border border-white/20">
+              <User className="w-6 h-6 text-gray-500" />
+            </div>
+            <div className="text-left hidden sm:block">
+              <p className="text-xs font-black truncate tracking-tight leading-none mb-1">{profile?.displayName}</p>
+              <p className={cn("text-[9px] font-bold uppercase tracking-widest leading-none", roleTheme.subtext)}>{profile?.role}</p>
+            </div>
+          </button>
+
+          <button 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className={cn("md:hidden p-2 rounded-xl transition-colors", profile?.role === 'admin' ? "bg-white/5" : "bg-gray-100")}
+          >
+            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+        </div>
+      </header>
 
       {/* Mobile Menu Overlay */}
       <AnimatePresence>
@@ -424,15 +473,46 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </AnimatePresence>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 md:p-8 lg:p-12 pt-24 md:pt-8 lg:pt-12 overflow-auto relative z-10">
+      <main className="flex-1 p-4 md:p-8 lg:p-12 pt-28 pb-28 md:pb-12 overflow-auto relative z-10">
         <div className={cn(
-          "max-w-7xl mx-auto min-h-[calc(100vh-6rem)] md:min-h-0 p-6 md:p-10 rounded-[2.5rem] transition-all duration-500",
+          "max-w-7xl mx-auto min-h-[calc(100vh-12rem)] p-6 md:p-10 rounded-[2.5rem] transition-all duration-500",
           roleTheme.glass,
           roleTheme.text
         )}>
           {children}
         </div>
       </main>
+
+      {/* Mobile Bottom Navigation (Android Style) */}
+      <nav className={cn(
+        "md:hidden fixed bottom-6 left-6 right-6 h-20 rounded-[2.5rem] border-t backdrop-blur-2xl z-50 flex items-center justify-around px-4 shadow-2xl transition-all duration-500",
+        roleTheme.sidebar,
+        "border border-white/20"
+      )}>
+        {bottomNavItems.map((item) => (
+          <Link
+            key={item.path}
+            to={item.path}
+            className={cn(
+              "flex flex-col items-center gap-1 p-2 rounded-2xl transition-all active:scale-90 relative",
+              location.pathname === item.path 
+                ? cn("text-white", roleTheme.accent, "p-3 -translate-y-4 shadow-xl")
+                : cn("text-gray-500", roleTheme.navHover)
+            )}
+          >
+            {location.pathname === item.path && (
+              <motion.div 
+                layoutId="bottom-nav-active"
+                className="absolute inset-0 bg-current opacity-20 rounded-2xl -z-10"
+              />
+            )}
+            <item.icon className={cn("w-6 h-6", location.pathname === item.path ? "scale-110" : "")} />
+            {location.pathname !== item.path && (
+              <span className="text-[10px] font-bold uppercase tracking-tighter">{item.label}</span>
+            )}
+          </Link>
+        ))}
+      </nav>
     </div>
   );
 }

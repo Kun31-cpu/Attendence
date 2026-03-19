@@ -1,46 +1,6 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // ===============================================================
-    // Assumed Data Model
-    // ===============================================================
-    // Collection: users
-    // Fields: uid, email, displayName, role, departmentId, createdAt
-    //
-    // Collection: departments
-    // Fields: name, code
-    //
-    // Collection: subjects
-    // Fields: name, code, departmentId, facultyId
-    //
-    // Collection: attendance
-    // Fields: studentId, subjectId, timestamp, latitude, longitude, status
-    //
-    // Collection: marks
-    // Fields: studentId, subjectId, internalMarks, externalMarks, totalMarks, grade
-    //
-    // Collection: assignments
-    // Fields: title, description, subjectId, deadline, maxMarks
-    //
-    // Collection: submissions
-    // Fields: assignmentId, studentId, fileUrl, submittedAt, marks, feedback
-    //
-    // Collection: labs
-    // Fields: title, subjectId, difficulty, weight
-    //
-    // Collection: lab_submissions
-    // Fields: labId, studentId, proofUrl, githubLink, completedAt, score
-    //
-    // Collection: videos
-    // Fields: subjectId, facultyId, title, videoUrl, youtubeUrl, visibility, createdAt
-    // ===============================================================
-
-    // ===============================================================
-    // Helper Functions
-    // ===============================================================
-    // ===============================================================
-    // Helper Functions
-    // ===============================================================
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -54,52 +14,24 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-    }
-
-    function isFaculty() {
-      return isAuthenticated() && (getUserData().role == 'faculty' || isAdmin());
-    }
-
-    // Validation Helpers
     function isValidString(val, min, max) {
       return val is string && val.size() >= min && val.size() <= max;
     }
 
-    function isValidNumber(val, min, max) {
-      return val is number && val >= min && val <= max;
+    function isFaculty() {
+      return isAuthenticated() && 
+             (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'faculty' || isAdmin());
     }
-
-    function hasOnlyAllowedFields(allowedFields) {
-      return request.resource.data.keys().hasOnly(allowedFields);
-    }
-
-    function isRecent(timestamp) {
-      return timestamp is timestamp && 
-             timestamp > request.time - duration('5m') &&
-             timestamp < request.time + duration('5m');
-    }
-
-    // ===============================================================
-    // Rules
-    // ===============================================================
 
     match /users/{userId} {
-      // Only owner or admin can read full profile (PII protection)
       allow read: if isOwner(userId) || isAdmin();
-      // Public profile view (if needed, but restricted)
-      // allow get: if isAuthenticated(); 
-      
       allow create: if isAuthenticated() && isOwner(userId) && 
                       isValidString(request.resource.data.displayName, 1, 100) &&
-                      request.resource.data.role == 'student'; // Default role
-      
+                      request.resource.data.role == 'student';
       allow update: if (isOwner(userId) && 
-                        request.resource.data.role == resource.data.role && // Cannot change own role
+                        request.resource.data.role == resource.data.role &&
                         isValidString(request.resource.data.displayName, 1, 100)) || 
                       isAdmin();
-      
       allow delete: if isAdmin();
     }
 
@@ -114,45 +46,32 @@ service cloud.firestore {
     }
 
     match /attendance/{attId} {
-      allow read: if isAdmin() || 
-                    (isAuthenticated() && (request.auth.uid == resource.data.studentId || request.auth.uid == resource.data.facultyId));
-      
+      allow read: if isAdmin() || (isAuthenticated() && (request.auth.uid == resource.data.studentId || isFaculty()));
       allow create: if isAuthenticated() && 
                       request.auth.uid == request.resource.data.studentId &&
-                      isValidString(request.resource.data.subjectId, 1, 50) &&
-                      isRecent(request.resource.data.timestamp);
-      
-      allow update, delete: if isAdmin() || (isAuthenticated() && request.auth.uid == resource.data.facultyId);
+                      request.resource.data.timestamp == request.time;
+      allow update, delete: if isAdmin() || isFaculty();
     }
 
     match /marks/{markId} {
-      allow read: if isAdmin() || 
-                    (isAuthenticated() && (request.auth.uid == resource.data.studentId || request.auth.uid == resource.data.facultyId));
-      allow write: if isAdmin() || (isAuthenticated() && request.auth.uid == resource.data.facultyId);
+      allow read: if isAdmin() || (isAuthenticated() && (request.auth.uid == resource.data.studentId || isFaculty()));
+      allow write: if isAdmin() || isFaculty();
     }
 
     match /assignments/{asgnId} {
       allow read: if isAuthenticated();
       allow create: if isFaculty() && 
-                      isValidString(request.resource.data.title, 1, 200) &&
-                      isValidString(request.resource.data.description, 0, 2000);
-      allow update, delete: if isAdmin() || (isAuthenticated() && request.auth.uid == resource.data.facultyId);
+                      isValidString(request.resource.data.title, 1, 200);
+      allow update, delete: if isAdmin() || isFaculty();
     }
 
     match /submissions/{subId} {
-      allow read: if isAdmin() || 
-                    (isAuthenticated() && (request.auth.uid == resource.data.studentId || request.auth.uid == resource.data.facultyId));
-      
-      allow create: if isAuthenticated() && 
-                      request.auth.uid == request.resource.data.studentId &&
-                      isValidString(request.resource.data.assignmentId, 1, 50);
-      
+      allow read: if isAdmin() || (isAuthenticated() && (request.auth.uid == resource.data.studentId || isFaculty()));
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.studentId;
       allow update: if isAdmin() || 
                       (isAuthenticated() && request.auth.uid == resource.data.studentId && 
-                       request.resource.data.marks == resource.data.marks && // Student cannot change marks
-                       isValidString(request.resource.data.fileUrl, 1, 500)) ||
-                      (isFaculty() && request.auth.uid == resource.data.facultyId);
-      
+                       request.resource.data.marks == resource.data.marks) ||
+                      isFaculty();
       allow delete: if isAdmin();
     }
 
@@ -162,11 +81,12 @@ service cloud.firestore {
     }
 
     match /lab_submissions/{labSubId} {
-      allow read: if isAdmin() || 
-                    (isAuthenticated() && (request.auth.uid == resource.data.studentId || request.auth.uid == resource.data.facultyId));
+      allow read: if isAdmin() || (isAuthenticated() && (request.auth.uid == resource.data.studentId || isFaculty()));
       allow create: if isAuthenticated() && request.auth.uid == request.resource.data.studentId;
       allow update: if isAdmin() || 
-                      (isAuthenticated() && request.auth.uid == resource.data.studentId && request.resource.data.score == resource.data.score);
+                      (isAuthenticated() && request.auth.uid == resource.data.studentId && 
+                       request.resource.data.score == resource.data.score) ||
+                      isFaculty();
       allow delete: if isAdmin();
     }
 
@@ -177,10 +97,20 @@ service cloud.firestore {
 
     match /attendance_sessions/{sessionId} {
       allow read: if isAuthenticated();
-      allow create: if isFaculty() && 
-                      request.auth.uid == request.resource.data.facultyId &&
-                      isValidString(request.resource.data.qrValue, 1, 100);
-      allow update, delete: if isAdmin() || (isAuthenticated() && request.auth.uid == resource.data.facultyId);
+      allow create: if isFaculty() && request.auth.uid == request.resource.data.facultyId;
+      allow update, delete: if isAdmin() || isFaculty();
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && 
+                      isValidString(request.resource.data.title, 1, 200) &&
+                      isValidString(request.resource.data.message, 1, 1000) &&
+                      request.resource.data.read == false &&
+                      request.resource.data.createdAt == request.time;
+      allow update: if isOwner(resource.data.userId) && 
+                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
     }
   }
 }

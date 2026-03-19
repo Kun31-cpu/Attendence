@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { Navigate } from 'react-router-dom';
-import { GraduationCap, LogIn, ShieldCheck, HelpCircle, Mail, Lock, UserPlus, ArrowLeft } from 'lucide-react';
+import { GraduationCap, LogIn, ShieldCheck, HelpCircle, Mail, Lock, UserPlus, ArrowLeft, Sparkles, Globe, Shield } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { cn } from '../lib/utils';
 
 export default function LoginPage() {
   const { user, profile, signIn, signInWithEmail, signUpWithEmail, loading, updateSecurity, resetPassword } = useAuth();
@@ -104,53 +105,88 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f5f0] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#0a0502] flex items-center justify-center p-6 relative overflow-hidden">
+      {/* Atmospheric Background */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        <motion.div 
+          animate={{ 
+            scale: [1, 1.2, 1],
+            rotate: [0, 90, 0],
+            x: [0, 50, 0],
+            y: [0, -50, 0]
+          }}
+          transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+          className="absolute -top-48 -left-48 w-[800px] h-[800px] bg-[#5A5A40]/20 blur-[120px] rounded-full" 
+        />
+        <motion.div 
+          animate={{ 
+            scale: [1, 1.3, 1],
+            rotate: [0, -90, 0],
+            x: [0, -100, 0],
+            y: [0, 100, 0]
+          }}
+          transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+          className="absolute -bottom-48 -right-48 w-[1000px] h-[1000px] bg-[#F27D26]/10 blur-[150px] rounded-full" 
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0a0502]/40 to-[#0a0502]" />
+      </div>
+
       <AnimatePresence mode="wait">
         {step === 'login' && (
           <motion.div 
             key="login"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl p-8 md:p-10 text-center border border-black/5"
+            initial={{ opacity: 0, y: 40, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -40, scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 100, damping: 20 }}
+            className="max-w-md w-full bg-white/5 backdrop-blur-3xl rounded-[3.5rem] shadow-2xl p-10 md:p-14 text-center border border-white/10 relative z-10"
           >
-            <div className="flex justify-center mb-8">
-              <div className="w-20 h-20 bg-[#5A5A40] rounded-3xl flex items-center justify-center shadow-lg shadow-[#5A5A40]/20">
-                <GraduationCap className="w-12 h-12 text-white" />
-              </div>
+            <div className="flex justify-center mb-10">
+              <motion.div 
+                whileHover={{ rotate: 12, scale: 1.1 }}
+                className="w-24 h-24 bg-gradient-to-br from-[#5A5A40] to-[#4A4A30] rounded-[2.5rem] flex items-center justify-center shadow-2xl shadow-[#5A5A40]/40 relative group"
+              >
+                <div className="absolute inset-0 bg-white/20 rounded-[2.5rem] scale-0 group-hover:scale-100 transition-transform duration-500" />
+                <GraduationCap className="w-12 h-12 text-white relative z-10" />
+              </motion.div>
             </div>
             
-            <h1 className="text-4xl font-serif font-bold text-[#1a1a1a] mb-2">EduTrack Pro</h1>
-            <p className="text-[#5A5A40] mb-10 font-serif italic text-lg">
+            <h1 className="text-5xl font-playfair font-black text-white tracking-tighter mb-3">EduTrack Pro</h1>
+            <p className="text-white/60 mb-12 font-montserrat font-medium italic text-lg leading-relaxed">
               {authMode === 'forgot-password' ? 'Reset Your Password' : 'Smart Faculty & Classroom Automation'}
             </p>
             
             {authMode === 'google' ? (
-              <div className="space-y-4">
-                <button
+              <div className="space-y-6">
+                <motion.button
+                  whileHover={{ y: -4, scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={handleGoogleSignIn}
                   disabled={isSubmitting}
-                  className="w-full flex items-center justify-center gap-3 bg-[#5A5A40] text-white py-4 rounded-2xl font-bold hover:bg-[#4A4A30] transition-all shadow-lg shadow-[#5A5A40]/20 active:scale-95 disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-4 bg-white text-[#0a0502] py-5 rounded-3xl font-montserrat font-black text-sm uppercase tracking-widest shadow-2xl shadow-white/10 hover:bg-gray-100 transition-all disabled:opacity-50 relative overflow-hidden group"
                 >
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/0 via-black/5 to-black/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                   <LogIn className="w-5 h-5" />
                   {isSubmitting ? 'Connecting...' : 'Sign in with Google'}
-                </button>
+                </motion.button>
                 
-                <div className="relative my-8">
-                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-100"></div></div>
-                  <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-4 text-gray-400 font-bold tracking-widest">Or continue with</span></div>
+                <div className="relative my-10">
+                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
+                  <div className="relative flex justify-center text-[10px] uppercase tracking-[0.3em] font-black text-white/30"><span className="bg-[#0a0502] px-4">Or continue with</span></div>
                 </div>
 
-                <button
+                <motion.button
+                  whileHover={{ y: -4, scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => setAuthMode('email')}
-                  className="w-full flex items-center justify-center gap-3 bg-white text-[#5A5A40] border-2 border-[#5A5A40]/10 py-4 rounded-2xl font-bold hover:bg-gray-50 transition-all active:scale-95"
+                  className="w-full flex items-center justify-center gap-4 bg-white/5 text-white border-2 border-white/10 py-5 rounded-3xl font-montserrat font-black text-sm uppercase tracking-widest hover:bg-white/10 transition-all"
                 >
                   <Mail className="w-5 h-5" />
                   Email & Password
-                </button>
+                </motion.button>
               </div>
             ) : (
-              <form onSubmit={handleEmailAuth} className="space-y-4 text-left">
+              <form onSubmit={handleEmailAuth} className="space-y-6 text-left">
                 <button 
                   type="button"
                   onClick={() => {
@@ -158,28 +194,28 @@ export default function LoginPage() {
                     setError('');
                     setSuccess('');
                   }}
-                  className="flex items-center gap-2 text-sm font-bold text-[#5A5A40] mb-6 hover:opacity-70 transition-opacity"
+                  className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/40 mb-8 hover:text-white transition-colors"
                 >
-                  <ArrowLeft className="w-4 h-4" /> Back to Google Sign In
+                  <ArrowLeft className="w-4 h-4" /> Back to Google
                 </button>
 
                 {authMode === 'forgot-password' && (
-                  <div className="mb-6 p-4 bg-blue-50 rounded-2xl border border-blue-100">
-                    <p className="text-xs text-blue-700 font-medium leading-relaxed">
+                  <div className="mb-8 p-6 bg-white/5 rounded-[2rem] border border-white/10">
+                    <p className="text-xs text-white/70 font-montserrat font-medium leading-relaxed italic">
                       Enter your email address and we'll send you a link to reset your password.
                     </p>
                   </div>
                 )}
 
                 {authMode === 'signup' && (
-                  <div>
-                    <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2 ml-1">Full Name</label>
-                    <div className="relative">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"><UserPlus className="w-5 h-5" /></div>
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-white/40 ml-2">Full Name</label>
+                    <div className="relative group">
+                      <div className="absolute left-5 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-white transition-colors"><UserPlus className="w-5 h-5" /></div>
                       <input 
                         type="text"
                         placeholder="John Doe"
-                        className="w-full pl-12 pr-4 py-4 rounded-2xl border border-gray-100 focus:ring-4 focus:ring-[#5A5A40]/10 focus:border-[#5A5A40] outline-none transition-all font-medium"
+                        className="w-full pl-14 pr-6 py-5 rounded-3xl bg-white/5 border border-white/10 focus:ring-4 focus:ring-white/5 focus:border-white/30 outline-none transition-all font-montserrat font-medium text-sm text-white"
                         value={name}
                         onChange={e => setName(e.target.value)}
                         required
@@ -188,14 +224,14 @@ export default function LoginPage() {
                   </div>
                 )}
 
-                <div>
-                  <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2 ml-1">Email Address</label>
-                  <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"><Mail className="w-5 h-5" /></div>
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-white/40 ml-2">Email Address</label>
+                  <div className="relative group">
+                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-white transition-colors"><Mail className="w-5 h-5" /></div>
                     <input 
                       type="email"
                       placeholder="name@university.edu"
-                      className="w-full pl-12 pr-4 py-4 rounded-2xl border border-gray-100 focus:ring-4 focus:ring-[#5A5A40]/10 focus:border-[#5A5A40] outline-none transition-all font-medium"
+                      className="w-full pl-14 pr-6 py-5 rounded-3xl bg-white/5 border border-white/10 focus:ring-4 focus:ring-white/5 focus:border-white/30 outline-none transition-all font-montserrat font-medium text-sm text-white"
                       value={email}
                       onChange={e => setEmail(e.target.value)}
                       required
@@ -204,21 +240,21 @@ export default function LoginPage() {
                 </div>
 
                 {authMode !== 'forgot-password' && (
-                  <div>
-                    <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2 ml-1">Password</label>
-                    <div className="relative">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"><Lock className="w-5 h-5" /></div>
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-white/40 ml-2">Password</label>
+                    <div className="relative group">
+                      <div className="absolute left-5 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-white transition-colors"><Lock className="w-5 h-5" /></div>
                       <input 
                         type="password"
                         placeholder="••••••••"
-                        className="w-full pl-12 pr-4 py-4 rounded-2xl border border-gray-100 focus:ring-4 focus:ring-[#5A5A40]/10 focus:border-[#5A5A40] outline-none transition-all font-medium"
+                        className="w-full pl-14 pr-6 py-5 rounded-3xl bg-white/5 border border-white/10 focus:ring-4 focus:ring-white/5 focus:border-white/30 outline-none transition-all font-montserrat font-medium text-sm text-white"
                         value={password}
                         onChange={e => setPassword(e.target.value)}
                         required
                       />
                     </div>
                     {authMode === 'email' && (
-                      <div className="mt-2 text-right">
+                      <div className="mt-3 text-right">
                         <button 
                           type="button"
                           onClick={() => {
@@ -226,7 +262,7 @@ export default function LoginPage() {
                             setError('');
                             setSuccess('');
                           }}
-                          className="text-xs font-bold text-[#5A5A40] hover:underline"
+                          className="text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors"
                         >
                           Forgot Password?
                         </button>
@@ -235,20 +271,22 @@ export default function LoginPage() {
                   </div>
                 )}
 
-                {error && <p className="text-red-500 text-xs font-bold px-1">{error}</p>}
-                {success && <p className="text-emerald-600 text-xs font-bold px-1">{success}</p>}
+                {error && <p className="text-red-400 text-[10px] font-black uppercase tracking-widest px-2">{error}</p>}
+                {success && <p className="text-emerald-400 text-[10px] font-black uppercase tracking-widest px-2">{success}</p>}
 
-                <button 
+                <motion.button 
+                  whileHover={{ y: -4, scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   disabled={isSubmitting}
-                  className="w-full bg-[#5A5A40] text-white py-4 rounded-2xl font-bold hover:bg-[#4A4A30] transition-all shadow-lg shadow-[#5A5A40]/20 active:scale-95 disabled:opacity-50"
+                  className="w-full bg-white text-[#0a0502] py-5 rounded-3xl font-montserrat font-black text-sm uppercase tracking-widest shadow-2xl shadow-white/10 hover:bg-gray-100 transition-all disabled:opacity-50"
                 >
                   {isSubmitting ? 'Processing...' : (
                     authMode === 'email' ? 'Sign In' : 
                     authMode === 'signup' ? 'Create Account' : 'Send Reset Link'
                   )}
-                </button>
+                </motion.button>
 
-                <p className="text-center text-sm text-gray-500 mt-6">
+                <p className="text-center text-[11px] font-montserrat font-medium text-white/40 mt-8">
                   {authMode === 'email' ? "Don't have an account? " : 
                    authMode === 'signup' ? "Already have an account? " : "Remember your password? "}
                   <button 
@@ -259,7 +297,7 @@ export default function LoginPage() {
                       setError('');
                       setSuccess('');
                     }}
-                    className="text-[#5A5A40] font-bold hover:underline"
+                    className="text-white font-black uppercase tracking-widest hover:underline ml-1"
                   >
                     {authMode === 'email' ? 'Create one now' : 
                      authMode === 'signup' ? 'Sign in here' : 'Back to login'}
@@ -268,54 +306,62 @@ export default function LoginPage() {
               </form>
             )}
             
-            <p className="mt-10 text-[10px] text-gray-400 uppercase font-black tracking-[0.3em]">
-              University Enterprise Edition
-            </p>
+            <div className="mt-14 flex items-center justify-center gap-3">
+              <div className="h-px w-8 bg-white/10" />
+              <p className="text-[9px] text-white/30 uppercase font-black tracking-[0.4em]">
+                University Enterprise Edition
+              </p>
+              <div className="h-px w-8 bg-white/10" />
+            </div>
           </motion.div>
         )}
 
         {step === 'setup' && (
           <motion.div 
             key="setup"
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
-            className="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl p-8 md:p-10 border border-black/5"
+            className="max-w-md w-full bg-white/5 backdrop-blur-3xl rounded-[3.5rem] shadow-2xl p-10 md:p-14 border border-white/10 relative z-10"
           >
-            <div className="text-center mb-10">
-              <div className="w-20 h-20 bg-amber-50 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner">
-                <ShieldCheck className="w-12 h-12 text-amber-600" />
+            <div className="text-center mb-12">
+              <div className="w-24 h-24 bg-amber-500/10 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-inner">
+                <ShieldCheck className="w-12 h-12 text-amber-500" />
               </div>
-              <h2 className="text-3xl font-serif font-bold text-gray-900">Security Setup</h2>
-              <p className="text-gray-500 mt-2 font-serif italic">Set a security question for future verification.</p>
+              <h2 className="text-4xl font-playfair font-black text-white tracking-tight">Security Setup</h2>
+              <p className="text-white/60 mt-3 font-montserrat font-medium italic">Set a security question for future verification.</p>
             </div>
 
-            <form onSubmit={handleSetup} className="space-y-6">
-              <div>
-                <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2 ml-1">Security Question</label>
+            <form onSubmit={handleSetup} className="space-y-8">
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-white/40 ml-2">Security Question</label>
                 <input 
                   type="text"
                   placeholder="e.g., What was your first pet's name?"
-                  className="w-full px-5 py-4 rounded-2xl border border-gray-100 focus:ring-4 focus:ring-[#5A5A40]/10 focus:border-[#5A5A40] outline-none transition-all font-medium"
+                  className="w-full px-6 py-5 rounded-3xl bg-white/5 border border-white/10 focus:ring-4 focus:ring-white/5 focus:border-white/30 outline-none transition-all font-montserrat font-medium text-sm text-white"
                   value={question}
                   onChange={e => setQuestion(e.target.value)}
                   required
                 />
               </div>
-              <div>
-                <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2 ml-1">Your Answer</label>
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-white/40 ml-2">Your Answer</label>
                 <input 
                   type="text"
                   placeholder="Enter answer"
-                  className="w-full px-5 py-4 rounded-2xl border border-gray-100 focus:ring-4 focus:ring-[#5A5A40]/10 focus:border-[#5A5A40] outline-none transition-all font-medium"
+                  className="w-full px-6 py-5 rounded-3xl bg-white/5 border border-white/10 focus:ring-4 focus:ring-white/5 focus:border-white/30 outline-none transition-all font-montserrat font-medium text-sm text-white"
                   value={answer}
                   onChange={e => setAnswer(e.target.value)}
                   required
                 />
               </div>
-              {error && <p className="text-red-500 text-xs font-bold px-1">{error}</p>}
-              <button className="w-full bg-[#5A5A40] text-white py-4 rounded-2xl font-bold hover:bg-[#4A4A30] transition-all shadow-lg shadow-[#5A5A40]/20 active:scale-95">
+              {error && <p className="text-red-400 text-[10px] font-black uppercase tracking-widest px-2">{error}</p>}
+              <motion.button 
+                whileHover={{ y: -4, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full bg-white text-[#0a0502] py-5 rounded-3xl font-montserrat font-black text-sm uppercase tracking-widest shadow-2xl shadow-white/10 hover:bg-gray-100 transition-all"
+              >
                 Complete Setup
-              </button>
+              </motion.button>
             </form>
           </motion.div>
         )}
@@ -323,29 +369,32 @@ export default function LoginPage() {
         {step === 'verify' && (
           <motion.div 
             key="verify"
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
-            className="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl p-8 md:p-10 border border-black/5"
+            className="max-w-md w-full bg-white/5 backdrop-blur-3xl rounded-[3.5rem] shadow-2xl p-10 md:p-14 border border-white/10 relative z-10"
           >
-            <div className="text-center mb-10">
-              <div className="w-20 h-20 bg-blue-50 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner">
-                <HelpCircle className="w-12 h-12 text-blue-600" />
+            <div className="text-center mb-12">
+              <div className="w-24 h-24 bg-blue-500/10 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-inner">
+                <HelpCircle className="w-12 h-12 text-blue-400" />
               </div>
-              <h2 className="text-3xl font-serif font-bold text-gray-900">Security Verification</h2>
-              <p className="text-gray-500 mt-2 font-serif italic">Answer your security question to continue.</p>
+              <h2 className="text-4xl font-playfair font-black text-white tracking-tight">Verification</h2>
+              <p className="text-white/60 mt-3 font-montserrat font-medium italic">Answer your security question to continue.</p>
             </div>
 
-            <form onSubmit={handleVerify} className="space-y-8">
-              <div className="p-6 bg-gray-50 rounded-3xl border border-gray-100">
-                <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest mb-2">Your Question</p>
-                <p className="font-serif italic text-lg text-gray-800 leading-relaxed">{profile?.securityQuestion}</p>
+            <form onSubmit={handleVerify} className="space-y-10">
+              <div className="p-8 bg-white/5 rounded-[2.5rem] border border-white/10 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:rotate-12 transition-transform">
+                  <Sparkles className="w-8 h-8 text-white" />
+                </div>
+                <p className="text-[10px] text-white/40 uppercase font-black tracking-[0.2em] mb-3">Your Question</p>
+                <p className="font-playfair italic text-xl text-white leading-relaxed">{profile?.securityQuestion}</p>
               </div>
-              <div>
-                <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2 ml-1">Your Answer</label>
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-white/40 ml-2">Your Answer</label>
                 <input 
                   type="text"
                   placeholder="Enter answer"
-                  className="w-full px-5 py-4 rounded-2xl border border-gray-100 focus:ring-4 focus:ring-[#5A5A40]/10 focus:border-[#5A5A40] outline-none transition-all font-medium"
+                  className="w-full px-6 py-5 rounded-3xl bg-white/5 border border-white/10 focus:ring-4 focus:ring-white/5 focus:border-white/30 outline-none transition-all font-montserrat font-medium text-sm text-white"
                   value={verifyAnswer}
                   onChange={e => {
                     setVerifyAnswer(e.target.value);
@@ -355,10 +404,14 @@ export default function LoginPage() {
                   autoFocus
                 />
               </div>
-              {error && <p className="text-red-500 text-xs font-bold px-1">{error}</p>}
-              <button className="w-full bg-[#5A5A40] text-white py-4 rounded-2xl font-bold hover:bg-[#4A4A30] transition-all shadow-lg shadow-[#5A5A40]/20 active:scale-95">
+              {error && <p className="text-red-400 text-[10px] font-black uppercase tracking-widest px-2">{error}</p>}
+              <motion.button 
+                whileHover={{ y: -4, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full bg-white text-[#0a0502] py-5 rounded-3xl font-montserrat font-black text-sm uppercase tracking-widest shadow-2xl shadow-white/10 hover:bg-gray-100 transition-all"
+              >
                 Verify & Login
-              </button>
+              </motion.button>
             </form>
           </motion.div>
         )}

@@ -148,6 +148,21 @@
         "expiresAt": { "type": "string", "format": "date-time" }
       },
       "required": ["facultyId", "qrValue", "active", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "System notifications for users.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Recipient UID" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["assignment", "submission", "grade", "attendance", "deadline"] },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "link": { "type": "string", "description": "Optional link to the relevant section" }
+      },
+      "required": ["userId", "title", "message", "type", "read", "createdAt"]
     }
   },
   "firestore": {
@@ -161,6 +176,7 @@
     "labs": { "schema": "Lab", "description": "Lab experiments" },
     "lab_submissions": { "schema": "LabSubmission", "description": "Lab progress" },
     "videos": { "schema": "Video", "description": "Class recordings" },
-    "attendance_sessions": { "schema": "AttendanceSession", "description": "Active QR sessions" }
+    "attendance_sessions": { "schema": "AttendanceSession", "description": "Active QR sessions" },
+    "notifications": { "schema": "Notification", "description": "User notifications" }
   }
 }
