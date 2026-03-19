@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { db } from '../firebase';
 import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
+import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 
 export default function VideoLibraryPage() {
   const { profile } = useAuth();
@@ -23,6 +24,8 @@ export default function VideoLibraryPage() {
     const q = query(collection(db, 'videos'), orderBy('createdAt', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setVideos(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (err) => {
+      handleFirestoreError(err, OperationType.LIST, 'videos');
     });
     return () => unsubscribe();
   }, []);

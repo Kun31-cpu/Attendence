@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp, query, onSnapshot, orderBy, where } from 'firebase/firestore';
+import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 import { format, isAfter } from 'date-fns';
 import { cn } from '../lib/utils';
 
@@ -30,6 +31,8 @@ export default function AssignmentsPage() {
     const q = query(collection(db, 'assignments'), orderBy('deadline', 'asc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setAssignments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (err) => {
+      handleFirestoreError(err, OperationType.LIST, 'assignments');
     });
     return () => unsubscribe();
   }, []);
@@ -46,6 +49,8 @@ export default function AssignmentsPage() {
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setSubmissions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (err) => {
+      handleFirestoreError(err, OperationType.LIST, 'submissions');
     });
     return () => unsubscribe();
   }, [profile]);
@@ -61,7 +66,7 @@ export default function AssignmentsPage() {
       setShowCreateModal(false);
       setNewAssignment({ title: '', description: '', deadline: '', maxMarks: 100 });
     } catch (err) {
-      console.error(err);
+      handleFirestoreError(err, OperationType.CREATE, 'assignments');
     }
   };
 
@@ -79,7 +84,7 @@ export default function AssignmentsPage() {
         feedback: ''
       });
     } catch (err) {
-      console.error(err);
+      handleFirestoreError(err, OperationType.CREATE, 'submissions');
     } finally {
       setIsSubmitting(null);
     }

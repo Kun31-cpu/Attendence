@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth, db } from '../firebase';
 import { onAuthStateChanged, User as FirebaseUser, signInWithPopup, GoogleAuthProvider, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile as updateFirebaseProfile, sendPasswordResetEmail } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, getDocFromServer } from 'firebase/firestore';
+import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 
 interface UserProfile {
   uid: string;
@@ -69,31 +70,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(user);
       if (user) {
         const docRef = doc(db, 'users', user.uid);
-        const docSnap = await getDoc(docRef);
-        
-        if (docSnap.exists()) {
-          const existingProfile = docSnap.data() as UserProfile;
-          const isAllowedEmail = user.email === ADMIN_EMAIL;
+        try {
+          const docSnap = await getDoc(docRef);
           
-          // Force student role if not the allowed email but somehow has admin/faculty role
-          if (!isAllowedEmail && (existingProfile.role === 'admin' || existingProfile.role === 'faculty')) {
-            const updatedProfile = { ...existingProfile, role: 'student' as const };
-            await updateDoc(docRef, { role: 'student' });
-            setProfile(updatedProfile);
+          if (docSnap.exists()) {
+            const existingProfile = docSnap.data() as UserProfile;
+            const isAllowedEmail = user.email === ADMIN_EMAIL;
+            
+            // Force student role if not the allowed email but somehow has admin/faculty role
+            if (!isAllowedEmail && (existingProfile.role === 'admin' || existingProfile.role === 'faculty')) {
+              const updatedProfile = { ...existingProfile, role: 'student' as const };
+              await updateDoc(docRef, { role: 'student' });
+              setProfile(updatedProfile);
+            } else {
+              setProfile(existingProfile);
+            }
           } else {
-            setProfile(existingProfile);
+            // Create default profile if not exists
+            const isAllowedEmail = user.email === ADMIN_EMAIL;
+            const newProfile: UserProfile = {
+              uid: user.uid,
+              email: user.email || '',
+              displayName: user.displayName || '',
+              role: isAllowedEmail ? 'admin' : 'student',
+            };
+            await setDoc(docRef, newProfile);
+            setProfile(newProfile);
           }
-        } else {
-          // Create default profile if not exists
-          const isAllowedEmail = user.email === ADMIN_EMAIL;
-          const newProfile: UserProfile = {
-            uid: user.uid,
-            email: user.email || '',
-            displayName: user.displayName || '',
-            role: isAllowedEmail ? 'admin' : 'student',
-          };
-          await setDoc(docRef, newProfile);
-          setProfile(newProfile);
+        } catch (error) {
+          handleFirestoreError(error, OperationType.GET, `users/${user.uid}`);
         }
       } else {
         setProfile(null);

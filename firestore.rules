@@ -38,34 +38,47 @@ service cloud.firestore {
     // ===============================================================
     // Helper Functions
     // ===============================================================
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
     function isAuthenticated() {
       return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+             (request.auth.token.email == "beraniranjan722@gmail.com" && request.auth.token.email_verified == true);
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
     }
 
     function getUserData() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    function hasRole(role) {
-      return isAuthenticated() && getUserData().role == role;
-    }
-
-    function isAdmin() {
-      return isAuthenticated() && 
-             request.auth.token.email == "beraniranjan722@gmail.com" && 
-             (hasRole('admin') || request.auth.token.email_verified == true);
-    }
-
     function isFaculty() {
-      return hasRole('faculty') && request.auth.token.email == "beraniranjan722@gmail.com";
+      return isAuthenticated() && (getUserData().role == 'faculty' || isAdmin());
     }
 
-    function isStudent() {
-      return hasRole('student');
+    // Validation Helpers
+    function isValidString(val, min, max) {
+      return val is string && val.size() >= min && val.size() <= max;
     }
 
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
+    function isValidNumber(val, min, max) {
+      return val is number && val >= min && val <= max;
+    }
+
+    function hasOnlyAllowedFields(allowedFields) {
+      return request.resource.data.keys().hasOnly(allowedFields);
+    }
+
+    function isRecent(timestamp) {
+      return timestamp is timestamp && 
+             timestamp > request.time - duration('5m') &&
+             timestamp < request.time + duration('5m');
     }
 
     // ===============================================================
@@ -73,11 +86,20 @@ service cloud.firestore {
     // ===============================================================
 
     match /users/{userId} {
-      allow read: if isAuthenticated();
+      // Only owner or admin can read full profile (PII protection)
+      allow read: if isOwner(userId) || isAdmin();
+      // Public profile view (if needed, but restricted)
+      // allow get: if isAuthenticated(); 
+      
       allow create: if isAuthenticated() && isOwner(userId) && 
-                    (request.resource.data.role == 'student' || 
-                     (request.resource.data.role == 'admin' && request.auth.token.email == "beraniranjan722@gmail.com"));
-      allow update: if isAdmin() || (isOwner(userId) && request.resource.data.role == resource.data.role);
+                      isValidString(request.resource.data.displayName, 1, 100) &&
+                      request.resource.data.role == 'student'; // Default role
+      
+      allow update: if (isOwner(userId) && 
+                        request.resource.data.role == resource.data.role && // Cannot change own role
+                        isValidString(request.resource.data.displayName, 1, 100)) || 
+                      isAdmin();
+      
       allow delete: if isAdmin();
     }
 
@@ -92,50 +114,73 @@ service cloud.firestore {
     }
 
     match /attendance/{attId} {
-      allow read: if isAdmin() || isFaculty() || (isStudent() && request.auth.uid == resource.data.studentId);
-      allow create: if isStudent() && request.auth.uid == request.resource.data.studentId;
-      allow update, delete: if isAdmin() || isFaculty();
+      allow read: if isAdmin() || 
+                    (isAuthenticated() && (request.auth.uid == resource.data.studentId || request.auth.uid == resource.data.facultyId));
+      
+      allow create: if isAuthenticated() && 
+                      request.auth.uid == request.resource.data.studentId &&
+                      isValidString(request.resource.data.subjectId, 1, 50) &&
+                      isRecent(request.resource.data.timestamp);
+      
+      allow update, delete: if isAdmin() || (isAuthenticated() && request.auth.uid == resource.data.facultyId);
     }
 
     match /marks/{markId} {
-      allow read: if isAdmin() || isFaculty() || (isStudent() && request.auth.uid == resource.data.studentId);
-      allow write: if isAdmin() || isFaculty();
+      allow read: if isAdmin() || 
+                    (isAuthenticated() && (request.auth.uid == resource.data.studentId || request.auth.uid == resource.data.facultyId));
+      allow write: if isAdmin() || (isAuthenticated() && request.auth.uid == resource.data.facultyId);
     }
 
     match /assignments/{asgnId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin() || isFaculty();
+      allow create: if isFaculty() && 
+                      isValidString(request.resource.data.title, 1, 200) &&
+                      isValidString(request.resource.data.description, 0, 2000);
+      allow update, delete: if isAdmin() || (isAuthenticated() && request.auth.uid == resource.data.facultyId);
     }
 
     match /submissions/{subId} {
-      allow read: if isAdmin() || isFaculty() || (isStudent() && request.auth.uid == resource.data.studentId);
-      allow create: if isStudent() && request.auth.uid == request.resource.data.studentId;
-      allow update: if isAdmin() || isFaculty() || (isStudent() && request.auth.uid == resource.data.studentId && request.resource.data.marks == resource.data.marks);
-      allow delete: if isAdmin() || isFaculty();
+      allow read: if isAdmin() || 
+                    (isAuthenticated() && (request.auth.uid == resource.data.studentId || request.auth.uid == resource.data.facultyId));
+      
+      allow create: if isAuthenticated() && 
+                      request.auth.uid == request.resource.data.studentId &&
+                      isValidString(request.resource.data.assignmentId, 1, 50);
+      
+      allow update: if isAdmin() || 
+                      (isAuthenticated() && request.auth.uid == resource.data.studentId && 
+                       request.resource.data.marks == resource.data.marks && // Student cannot change marks
+                       isValidString(request.resource.data.fileUrl, 1, 500)) ||
+                      (isFaculty() && request.auth.uid == resource.data.facultyId);
+      
+      allow delete: if isAdmin();
     }
 
     match /labs/{labId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin() || isFaculty();
+      allow write: if isFaculty();
     }
 
     match /lab_submissions/{labSubId} {
-      allow read: if isAdmin() || isFaculty() || (isStudent() && request.auth.uid == resource.data.studentId);
-      allow create: if isStudent() && request.auth.uid == request.resource.data.studentId;
-      allow update: if isAdmin() || isFaculty() || (isStudent() && request.auth.uid == resource.data.studentId && request.resource.data.score == resource.data.score);
-      allow delete: if isAdmin() || isFaculty();
+      allow read: if isAdmin() || 
+                    (isAuthenticated() && (request.auth.uid == resource.data.studentId || request.auth.uid == resource.data.facultyId));
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.studentId;
+      allow update: if isAdmin() || 
+                      (isAuthenticated() && request.auth.uid == resource.data.studentId && request.resource.data.score == resource.data.score);
+      allow delete: if isAdmin();
     }
 
     match /videos/{videoId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin() || isFaculty();
+      allow write: if isFaculty();
     }
 
     match /attendance_sessions/{sessionId} {
       allow read: if isAuthenticated();
-      allow create: if isAdmin() || isFaculty();
-      allow update: if isAdmin() || isFaculty();
-      allow delete: if isAdmin() || isFaculty();
+      allow create: if isFaculty() && 
+                      request.auth.uid == request.resource.data.facultyId &&
+                      isValidString(request.resource.data.qrValue, 1, 100);
+      allow update, delete: if isAdmin() || (isAuthenticated() && request.auth.uid == resource.data.facultyId);
     }
   }
 }

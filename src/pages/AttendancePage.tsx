@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { db } from '../firebase';
+import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 import { collection, addDoc, serverTimestamp, query, where, onSnapshot, orderBy, updateDoc, doc, getDocs, limit, deleteDoc } from 'firebase/firestore';
 
 // Helper to calculate distance between two points in meters
@@ -41,7 +42,7 @@ function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
 }
 
 export default function AttendancePage() {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const [qrValue, setQrValue] = useState('');
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes
   const [attendanceLogs, setAttendanceLogs] = useState<any[]>([]);
@@ -119,6 +120,8 @@ export default function AttendancePage() {
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const attendees = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setSessionAttendees(attendees);
+      }, (err) => {
+        handleFirestoreError(err, OperationType.LIST, 'attendance');
       });
       return () => unsubscribe();
     }
@@ -140,6 +143,8 @@ export default function AttendancePage() {
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const sessions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setActiveSessions(sessions);
+      }, (err) => {
+        handleFirestoreError(err, OperationType.LIST, 'attendance_sessions');
       });
       return () => unsubscribe();
     }
@@ -161,7 +166,7 @@ export default function AttendancePage() {
         }));
         setHistoryLogs(logs);
       }, (err) => {
-        console.error("Firestore Error:", err);
+        handleFirestoreError(err, OperationType.LIST, 'attendance');
       });
       return () => unsubscribe();
     } else if (profile?.role === 'student') {
@@ -173,6 +178,8 @@ export default function AttendancePage() {
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const logs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
         setHistoryLogs(logs);
+      }, (err) => {
+        handleFirestoreError(err, OperationType.LIST, 'attendance');
       });
       return () => unsubscribe();
     }

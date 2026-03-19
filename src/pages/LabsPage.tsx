@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { db } from '../firebase';
 import { collection, query, onSnapshot, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
+import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 import { cn } from '../lib/utils';
 
 export default function LabsPage() {
@@ -24,6 +25,8 @@ export default function LabsPage() {
     const q = query(collection(db, 'labs'), orderBy('difficulty', 'asc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setLabs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (err) => {
+      handleFirestoreError(err, OperationType.LIST, 'labs');
     });
     return () => unsubscribe();
   }, []);
@@ -39,7 +42,7 @@ export default function LabsPage() {
       setShowCreateModal(false);
       setNewLab({ title: '', difficulty: 'easy', weight: 10 });
     } catch (err) {
-      console.error(err);
+      handleFirestoreError(err, OperationType.CREATE, 'labs');
     }
   };
 

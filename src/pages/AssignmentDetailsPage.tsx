@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { db } from '../firebase';
 import { doc, getDoc, collection, query, where, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 import { format, isAfter } from 'date-fns';
 import { cn } from '../lib/utils';
 
@@ -33,12 +34,17 @@ export default function AssignmentDetailsPage() {
     if (!id) return;
 
     const fetchAssignment = async () => {
-      const docRef = doc(db, 'assignments', id);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        setAssignment({ id: docSnap.id, ...docSnap.data() });
+      try {
+        const docRef = doc(db, 'assignments', id);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setAssignment({ id: docSnap.id, ...docSnap.data() });
+        }
+      } catch (err) {
+        handleFirestoreError(err, OperationType.GET, `assignments/${id}`);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchAssignment();
@@ -46,6 +52,8 @@ export default function AssignmentDetailsPage() {
     const q = query(collection(db, 'submissions'), where('assignmentId', '==', id));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setSubmissions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (err) => {
+      handleFirestoreError(err, OperationType.LIST, 'submissions');
     });
 
     return () => unsubscribe();
@@ -63,7 +71,7 @@ export default function AssignmentDetailsPage() {
       setGradingId(null);
       setGradeData({ marks: 0, feedback: '' });
     } catch (err) {
-      console.error(err);
+      handleFirestoreError(err, OperationType.UPDATE, `submissions/${subId}`);
     }
   };
 
