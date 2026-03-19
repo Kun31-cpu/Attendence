@@ -33,10 +33,28 @@ export default function FacultyDashboard() {
 
   return (
     <div className="space-y-8">
-      <header>
-        <h1 className="text-3xl font-serif font-bold">Faculty Dashboard</h1>
-        <p className="opacity-60 font-serif italic">Manage your classes and track student performance.</p>
-      </header>
+      {/* Premium Banner */}
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="relative overflow-hidden rounded-[2.5rem] p-8 md:p-12 border border-white/20 shadow-xl"
+        style={{ background: 'linear-gradient(135deg, rgba(90, 90, 64, 0.1) 0%, rgba(90, 90, 64, 0.05) 100%)' }}
+      >
+        <div className="absolute top-0 right-0 w-64 h-64 bg-[#5A5A40]/10 blur-[100px] -mr-32 -mt-32" />
+        <div className="relative z-10">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-3 rounded-2xl bg-[#5A5A40]/20 border border-[#5A5A40]/20">
+              <BookOpen className="w-8 h-8 text-[#5A5A40]" />
+            </div>
+            <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-[#5A5A40]">
+              {profile?.bannerName || 'EduTrack Faculty Hub'}
+            </h1>
+          </div>
+          <p className="text-lg text-[#5A5A40]/70 font-medium max-w-2xl leading-relaxed">
+            {profile?.bannerDescription || 'Empower your teaching journey. Track attendance, manage assignments, and nurture student success with integrated analytics.'}
+          </p>
+        </div>
+      </motion.div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[

@@ -26,12 +26,14 @@ const navItems = [
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { profile, logout, updateRole, user } = useAuth();
+  const { profile, logout, updateRole, user, isOffline } = useAuth();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const [showPasswordModal, setShowPasswordModal] = React.useState<{ role: 'admin' | 'faculty' | 'student' } | null>(null);
   const [passwordInput, setPasswordInput] = React.useState('');
   const [passwordError, setPasswordError] = React.useState(false);
+
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = React.useState(false);
 
   const isAdminEmail = user?.email === 'beraniranjan722@gmail.com';
 
@@ -100,8 +102,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   const confirmRoleSwitch = async () => {
-    // Simple password check - in a real app this would be more secure
-    if (passwordInput === 'kuntal007') {
+    // Check against persistent password (default is kuntal007)
+    const currentAdminPassword = profile?.adminPassword || 'kuntal007';
+    if (passwordInput === currentAdminPassword) {
       if (showPasswordModal) {
         await updateRole(showPasswordModal.role);
         setShowPasswordModal(null);
@@ -268,22 +271,70 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         )}
 
-        <div className="mt-auto pt-8 border-t border-white/5">
-          <div className="flex items-center gap-4 px-2 mb-8">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center overflow-hidden shadow-inner">
+        <div className="mt-auto pt-8 border-t border-white/5 relative">
+          <AnimatePresence>
+            {isProfileMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                className={cn(
+                  "absolute bottom-full left-0 w-full mb-4 p-3 rounded-2xl shadow-2xl border z-50",
+                  roleTheme.glass
+                )}
+              >
+                <div className="space-y-1">
+                  <div className="px-4 py-2 mb-2 border-b border-white/5">
+                    <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Account Settings</p>
+                  </div>
+                  <Link 
+                    to="/settings" 
+                    onClick={() => setIsProfileMenuOpen(false)}
+                    className={cn("flex items-center gap-3 px-4 py-3 rounded-xl transition-all", roleTheme.navHover)}
+                  >
+                    <User className="w-4 h-4" />
+                    <span className="text-sm font-bold">Edit Profile</span>
+                  </Link>
+                  <Link 
+                    to="/settings" 
+                    onClick={() => setIsProfileMenuOpen(false)}
+                    className={cn("flex items-center gap-3 px-4 py-3 rounded-xl transition-all", roleTheme.navHover)}
+                  >
+                    <FileText className="w-4 h-4" />
+                    <span className="text-sm font-bold">Banner Settings</span>
+                  </Link>
+                  <div className="h-px bg-white/5 my-2" />
+                  <button 
+                    onClick={() => {
+                      logout();
+                      setIsProfileMenuOpen(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-500/10 transition-all"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span className="text-sm font-bold">Logout</span>
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <button 
+            onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+            className="w-full flex items-center gap-4 px-2 mb-4 group hover:bg-white/5 p-2 rounded-2xl transition-all"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center overflow-hidden shadow-inner group-hover:scale-105 transition-transform">
               <User className="w-7 h-7 text-gray-500" />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-black truncate tracking-tight">{profile?.displayName}</p>
+            <div className="flex-1 min-w-0 text-left">
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-black truncate tracking-tight">{profile?.displayName}</p>
+                {isOffline && (
+                  <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.5)]" title="Offline Mode" />
+                )}
+              </div>
               <p className={cn("text-[10px] font-bold uppercase tracking-widest", roleTheme.subtext)}>{profile?.role}</p>
             </div>
-          </div>
-          <button
-            onClick={logout}
-            className="w-full flex items-center gap-4 px-5 py-4 text-red-500 hover:bg-red-500/10 rounded-2xl transition-all font-bold text-sm active:scale-95"
-          >
-            <LogOut className="w-5 h-5" />
-            <span>Logout</span>
           </button>
         </div>
       </aside>

@@ -33,15 +33,28 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-8">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-serif font-bold">Admin Console</h1>
-          <p className="opacity-60 font-serif italic">System-wide analytics and management</p>
+      {/* Premium Banner */}
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative overflow-hidden rounded-[2.5rem] p-8 md:p-12 border border-white/10 shadow-2xl"
+        style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%)' }}
+      >
+        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-[100px] -mr-32 -mt-32" />
+        <div className="relative z-10">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-3 rounded-2xl bg-emerald-500/20 border border-emerald-500/20">
+              <ShieldCheck className="w-8 h-8 text-emerald-400" />
+            </div>
+            <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-white">
+              {profile?.bannerName || 'EduTrack Pro Admin'}
+            </h1>
+          </div>
+          <p className="text-lg text-emerald-100/60 font-medium max-w-2xl leading-relaxed">
+            {profile?.bannerDescription || 'Welcome to your command center. Monitor system performance, manage users, and oversee institutional growth with precision.'}
+          </p>
         </div>
-        <button className="p-3 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10 hover:bg-white/20 transition-all">
-          <Settings className="w-6 h-6 text-inherit opacity-60" />
-        </button>
-      </header>
+      </motion.div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[

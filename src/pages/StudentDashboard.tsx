@@ -33,10 +33,28 @@ export default function StudentDashboard() {
 
   return (
     <div className="space-y-8">
-      <header>
-        <h1 className="text-3xl font-serif font-bold">Welcome back, {profile?.displayName}</h1>
-        <p className="opacity-60 font-serif italic">Here's your academic overview for today.</p>
-      </header>
+      {/* Premium Banner */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative overflow-hidden rounded-[2.5rem] p-8 md:p-12 border border-white/20 shadow-xl"
+        style={{ background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.1) 0%, rgba(79, 70, 229, 0.05) 100%)' }}
+      >
+        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 blur-[100px] -mr-32 -mt-32" />
+        <div className="relative z-10">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-3 rounded-2xl bg-indigo-500/20 border border-indigo-500/20">
+              <Calendar className="w-8 h-8 text-indigo-600" />
+            </div>
+            <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-indigo-900">
+              {profile?.bannerName || `Welcome back, ${profile?.displayName}`}
+            </h1>
+          </div>
+          <p className="text-lg text-indigo-900/60 font-medium max-w-2xl leading-relaxed">
+            {profile?.bannerDescription || "Stay ahead of your studies. Track your progress, manage assignments, and achieve your academic goals with ease."}
+          </p>
+        </div>
+      </motion.div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

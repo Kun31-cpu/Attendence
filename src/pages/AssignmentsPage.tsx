@@ -15,8 +15,11 @@ import { collection, addDoc, serverTimestamp, query, onSnapshot, orderBy, where 
 import { format, isAfter } from 'date-fns';
 import { cn } from '../lib/utils';
 
+import { useNavigate } from 'react-router-dom';
+
 export default function AssignmentsPage() {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const [assignments, setAssignments] = useState<any[]>([]);
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -118,6 +121,7 @@ export default function AssignmentsPage() {
           const facultySubmissions = submissions.filter(s => s.assignmentId === asgn.id);
           const status = studentSubmission ? studentSubmission.status : 'pending';
           const isOverdue = asgn.deadline && isAfter(new Date(), new Date(asgn.deadline));
+          const isNearingDeadline = asgn.deadline && !isOverdue && (new Date(asgn.deadline).getTime() - new Date().getTime()) < 24 * 60 * 60 * 1000;
 
           return (
             <motion.div
@@ -125,16 +129,37 @@ export default function AssignmentsPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
-              className="bg-white p-6 rounded-3xl border border-black/5 shadow-sm hover:shadow-md transition-all group relative overflow-hidden"
+              className={cn(
+                "bg-white p-6 rounded-3xl border shadow-sm hover:shadow-md transition-all group relative overflow-hidden",
+                status === 'graded' ? "bg-emerald-50/40 border-emerald-100" : 
+                status === 'submitted' ? "bg-blue-50/40 border-blue-100" :
+                isOverdue && status === 'pending' ? "border-red-100 bg-red-50/10" : 
+                isNearingDeadline && status === 'pending' ? "border-amber-100 bg-amber-50/10" : "border-black/5"
+              )}
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="w-12 h-12 bg-[#5A5A40]/10 rounded-2xl flex items-center justify-center group-hover:bg-[#5A5A40] transition-colors">
                   <FileText className="w-6 h-6 text-[#5A5A40] group-hover:text-white" />
                 </div>
                 <div className="flex flex-col items-end gap-2">
-                  <span className="text-xs font-bold px-3 py-1 bg-gray-100 rounded-full text-gray-500">
-                    {asgn.maxMarks} Marks
-                  </span>
+                  <div className="flex gap-2">
+                    {status === 'pending' && (
+                      <>
+                        {isOverdue ? (
+                          <span className="px-3 py-1 bg-red-100 text-red-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-red-200">
+                            Overdue
+                          </span>
+                        ) : isNearingDeadline ? (
+                          <span className="px-3 py-1 bg-amber-100 text-amber-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-amber-200 animate-pulse">
+                            Due Soon
+                          </span>
+                        ) : null}
+                      </>
+                    )}
+                    <span className="text-xs font-bold px-3 py-1 bg-gray-100 rounded-full text-gray-500">
+                      {asgn.maxMarks} Marks
+                    </span>
+                  </div>
                   {profile?.role === 'student' && (
                     <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider", getStatusColor(status))}>
                       {status}
@@ -165,25 +190,36 @@ export default function AssignmentsPage() {
               </div>
 
               {profile?.role === 'student' ? (
-                <button 
-                  onClick={() => handleSubmitAssignment(asgn.id)}
-                  disabled={status !== 'pending' || isOverdue || isSubmitting === asgn.id}
-                  className={cn(
-                    "w-full mt-6 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2",
-                    status === 'pending' && !isOverdue 
-                      ? "bg-[#5A5A40] text-white hover:bg-[#4A4A30]" 
-                      : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  )}
-                >
-                  {isSubmitting === asgn.id ? 'Submitting...' : 
-                   status === 'submitted' ? 'Submitted' : 
-                   status === 'graded' ? 'Graded' : 
-                   isOverdue ? 'Closed' : 'Upload Submission'}
-                  {status === 'submitted' && <CheckCircle className="w-4 h-4" />}
-                </button>
+                <div className="flex gap-2 mt-6">
+                  <button 
+                    onClick={() => handleSubmitAssignment(asgn.id)}
+                    disabled={status !== 'pending' || isOverdue || isSubmitting === asgn.id}
+                    className={cn(
+                      "flex-1 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2",
+                      status === 'pending' && !isOverdue 
+                        ? "bg-[#5A5A40] text-white hover:bg-[#4A4A30]" 
+                        : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    )}
+                  >
+                    {isSubmitting === asgn.id ? 'Submitting...' : 
+                     status === 'submitted' ? 'Submitted' : 
+                     status === 'graded' ? 'Graded' : 
+                     isOverdue ? 'Closed' : 'Upload'}
+                    {status === 'submitted' && <CheckCircle className="w-4 h-4" />}
+                  </button>
+                  <button 
+                    onClick={() => navigate(`/assignments/${asgn.id}`)}
+                    className="px-4 bg-gray-50 text-gray-600 rounded-xl hover:bg-gray-100 transition-all border border-gray-100"
+                  >
+                    Details
+                  </button>
+                </div>
               ) : (
-                <button className="w-full mt-6 bg-gray-50 text-gray-900 py-3 rounded-xl font-bold hover:bg-gray-100 transition-all">
-                  View Submissions
+                <button 
+                  onClick={() => navigate(`/assignments/${asgn.id}`)}
+                  className="w-full mt-6 bg-gray-50 text-gray-900 py-3 rounded-xl font-bold hover:bg-gray-100 transition-all"
+                >
+                  View Details & Submissions
                 </button>
               )}
             </motion.div>

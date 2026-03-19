@@ -51,11 +51,13 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return hasRole('admin') || (request.auth.token.email == "beraniranjan722@gmail.com" && request.auth.token.email_verified == true);
+      return isAuthenticated() && 
+             request.auth.token.email == "beraniranjan722@gmail.com" && 
+             (hasRole('admin') || request.auth.token.email_verified == true);
     }
 
     function isFaculty() {
-      return hasRole('faculty');
+      return hasRole('faculty') && request.auth.token.email == "beraniranjan722@gmail.com";
     }
 
     function isStudent() {
@@ -72,7 +74,9 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isOwner(userId) && request.resource.data.role == 'student'; // Default to student on self-reg
+      allow create: if isAuthenticated() && isOwner(userId) && 
+                    (request.resource.data.role == 'student' || 
+                     (request.resource.data.role == 'admin' && request.auth.token.email == "beraniranjan722@gmail.com"));
       allow update: if isAdmin() || (isOwner(userId) && request.resource.data.role == resource.data.role);
       allow delete: if isAdmin();
     }
@@ -125,6 +129,13 @@ service cloud.firestore {
     match /videos/{videoId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin() || isFaculty();
+    }
+
+    match /attendance_sessions/{sessionId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() || isFaculty();
+      allow update: if isAdmin() || isFaculty();
+      allow delete: if isAdmin() || isFaculty();
     }
   }
 }

@@ -132,6 +132,22 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["subjectId", "facultyId", "title", "createdAt"]
+    },
+    "AttendanceSession": {
+      "title": "Attendance Session",
+      "description": "Active attendance session hosted by faculty.",
+      "type": "object",
+      "properties": {
+        "facultyId": { "type": "string" },
+        "facultyName": { "type": "string" },
+        "qrValue": { "type": "string" },
+        "latitude": { "type": "number" },
+        "longitude": { "type": "number" },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "expiresAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["facultyId", "qrValue", "active", "createdAt"]
     }
   },
   "firestore": {
@@ -144,6 +160,7 @@
     "submissions": { "schema": "Submission", "description": "Assignment submissions" },
     "labs": { "schema": "Lab", "description": "Lab experiments" },
     "lab_submissions": { "schema": "LabSubmission", "description": "Lab progress" },
-    "videos": { "schema": "Video", "description": "Class recordings" }
+    "videos": { "schema": "Video", "description": "Class recordings" },
+    "attendance_sessions": { "schema": "AttendanceSession", "description": "Active QR sessions" }
   }
 }

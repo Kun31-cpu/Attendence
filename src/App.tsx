@@ -11,6 +11,7 @@ import AssignmentsPage from './pages/AssignmentsPage';
 import LabsPage from './pages/LabsPage';
 import VideoLibraryPage from './pages/VideoLibraryPage';
 import SettingsPage from './pages/SettingsPage';
+import AssignmentDetailsPage from './pages/AssignmentDetailsPage';
 
 function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) {
   const { user, profile, loading } = useAuth();
@@ -54,6 +55,13 @@ export default function App() {
             <ProtectedRoute>
               <DashboardLayout>
                 <AssignmentsPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/assignments/:id" element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <AssignmentDetailsPage />
               </DashboardLayout>
             </ProtectedRoute>
           } />
