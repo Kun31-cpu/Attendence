@@ -333,6 +333,18 @@ export default function AssignmentsPage() {
                 <h3 className="text-2xl font-playfair font-black text-[#5A5A40] leading-tight group-hover:text-[#4A4A30] transition-colors">{asgn.title}</h3>
                 <p className="text-sm text-[#5A5A40]/60 font-montserrat font-medium line-clamp-2 leading-relaxed">{asgn.description}</p>
                 
+                {asgn.title === 'Advanced Network Security' && (
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => navigate(`/assignments/${asgn.id}`)}
+                    className="w-full mt-4 bg-[#5A5A40]/10 text-[#5A5A40] py-3 rounded-2xl font-montserrat font-black text-[10px] uppercase tracking-widest hover:bg-[#5A5A40]/20 transition-all border border-[#5A5A40]/20 flex items-center justify-center gap-2"
+                  >
+                    View Assignment Details
+                    <ChevronRight className="w-4 h-4" />
+                  </motion.button>
+                )}
+                
                 <div className="pt-8 space-y-4 border-t border-[#5A5A40]/5">
                   <div className="flex items-center gap-3 text-[#5A5A40]/50">
                     <Calendar className="w-4 h-4" />

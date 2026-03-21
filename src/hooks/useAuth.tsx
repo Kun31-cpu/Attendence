@@ -26,6 +26,7 @@ interface UserProfile {
   language?: string;
   twoFactorEnabled?: boolean;
   photoURL?: string;
+  active?: boolean;
 }
 
 interface AuthContextType {
@@ -94,6 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               email: user.email || '',
               displayName: user.displayName || '',
               role: isAllowedEmail ? 'admin' : 'student',
+              active: true,
             };
             await setDoc(docRef, newProfile);
             setProfile(newProfile);
@@ -138,6 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email: email,
       displayName: name,
       role: isAllowedEmail ? 'admin' : 'student',
+      active: true,
     };
     await setDoc(doc(db, 'users', userCredential.user.uid), newProfile);
     setProfile(newProfile);

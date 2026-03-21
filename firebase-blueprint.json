@@ -12,9 +12,22 @@
         "bannerDescription": { "type": "string", "description": "Custom banner description for dashboard" },
         "role": { "type": "string", "enum": ["admin", "faculty", "student"] },
         "departmentId": { "type": "string", "description": "Reference to Department" },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "createdAt": { "type": "string", "format": "date-time" },
+        "active": { "type": "boolean", "description": "Whether the user account is active" },
+        "batchId": { "type": "string", "description": "Reference to Batch" }
       },
       "required": ["uid", "email", "role"]
+    },
+    "Batch": {
+      "title": "Batch",
+      "description": "Academic batch (e.g., 2022-2026).",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name"]
     },
     "Department": {
       "title": "Department",

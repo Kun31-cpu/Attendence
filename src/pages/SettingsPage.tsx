@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -17,7 +17,8 @@ import {
   ShieldCheck,
   DownloadCloud,
   Languages,
-  Upload
+  Upload,
+  HelpCircle
 } from 'lucide-react';
 import { db } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -44,7 +45,34 @@ export default function SettingsPage() {
   const [privacy, setPrivacy] = useState(profile?.privacy || { publicProfile: true });
   const [language, setLanguage] = useState(profile?.language || 'English');
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(profile?.twoFactorEnabled || false);
+  const [securityQuestion, setSecurityQuestion] = useState(profile?.securityQuestion || '');
+  const [securityAnswerInput, setSecurityAnswerInput] = useState(profile?.securityAnswer || '');
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (profile) {
+      setDisplayName(profile.displayName || '');
+      setBannerName(profile.bannerName || '');
+      setBannerDescription(profile.bannerDescription || '');
+      setTheme(profile.theme || 'light');
+      setNotifications(profile.notifications || { email: true, push: true });
+      setPrivacy(profile.privacy || { publicProfile: true });
+      setLanguage(profile.language || 'English');
+      setTwoFactorEnabled(profile.twoFactorEnabled || false);
+      setSecurityQuestion(profile.securityQuestion || '');
+      setSecurityAnswerInput(profile.securityAnswer || '');
+    }
+  }, [profile]);
+
+  const avatars = [
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka',
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=Milo',
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=Luna',
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=Oliver',
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=Zoe',
+  ];
 
   const handleProfilePictureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -88,8 +116,23 @@ export default function SettingsPage() {
         notifications,
         privacy,
         language,
-        twoFactorEnabled
+        twoFactorEnabled,
+        securityQuestion,
+        securityAnswer: securityAnswerInput
       });
+      
+      // Apply theme immediately
+      const root = window.document.documentElement;
+      if (theme === 'dark') {
+        root.classList.add('dark');
+      } else if (theme === 'light') {
+        root.classList.remove('dark');
+      } else if (theme === 'system') {
+        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        if (systemTheme === 'dark') root.classList.add('dark');
+        else root.classList.remove('dark');
+      }
+
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (err) {
@@ -285,37 +328,77 @@ export default function SettingsPage() {
       </AnimatePresence>
 
       <header>
-        <h1 className="text-3xl md:text-4xl font-playfair font-black text-stone-900 tracking-tight">Account Settings</h1>
-        <p className="text-lg text-stone-500 font-montserrat font-medium italic opacity-80">Manage your profile and security preferences.</p>
+        <h1 className="text-3xl font-serif font-bold text-gray-900">Account Settings</h1>
+        <p className="text-gray-500 font-serif italic">Manage your profile and security preferences.</p>
       </header>
 
       <div className="bg-white rounded-3xl border border-black/5 shadow-sm overflow-hidden">
-        <div className="p-8 border-b border-gray-100 flex items-center gap-4 bg-gray-50/50">
-          <div 
-            className="w-16 h-16 rounded-2xl bg-[#5A5A40] flex items-center justify-center text-white relative group overflow-hidden cursor-pointer"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            {profile?.photoURL ? (
-              <img src={profile.photoURL} alt="Profile" className="w-full h-full object-cover" />
-            ) : (
-              <User className="w-8 h-8" />
-            )}
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <Upload className="w-4 h-4 text-white" />
+        <div className="p-8 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+          <div className="flex items-center gap-4">
+            <div 
+              className="w-16 h-16 rounded-2xl bg-[#5A5A40] flex items-center justify-center text-white relative group overflow-hidden cursor-pointer"
+              onClick={() => setShowAvatarPicker(!showAvatarPicker)}
+            >
+              {profile?.photoURL ? (
+                <img src={profile.photoURL} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                <User className="w-8 h-8" />
+              )}
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <Upload className="w-4 h-4 text-white" />
+              </div>
             </div>
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              className="hidden" 
-              accept="image/*"
-              onChange={handleProfilePictureUpload}
-            />
+            <div>
+              <h3 className="text-xl font-bold">{profile?.displayName}</h3>
+              <p className="text-gray-500 text-sm capitalize">{profile?.role} Account</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-xl font-bold">{profile?.displayName}</h3>
-            <p className="text-gray-500 text-sm capitalize">{profile?.role} Account</p>
-          </div>
+          <button 
+            onClick={() => fileInputRef.current?.click()}
+            className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-50 transition-all"
+          >
+            Upload Custom
+          </button>
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            className="hidden" 
+            accept="image/*"
+            onChange={handleProfilePictureUpload}
+          />
         </div>
+
+        <AnimatePresence>
+          {showAvatarPicker && (
+            <motion.div 
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="px-8 py-6 bg-gray-50 border-b border-gray-100 overflow-hidden"
+            >
+              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-4">Choose an Avatar</p>
+              <div className="flex flex-wrap gap-4">
+                {avatars.map((avatar, idx) => (
+                  <button
+                    key={idx}
+                    onClick={async () => {
+                      setIsSaving(true);
+                      await updateProfile({ photoURL: avatar });
+                      setIsSaving(false);
+                      setShowAvatarPicker(false);
+                    }}
+                    className={cn(
+                      "w-12 h-12 rounded-xl border-2 transition-all hover:scale-110",
+                      profile?.photoURL === avatar ? "border-[#5A5A40]" : "border-transparent"
+                    )}
+                  >
+                    <img src={avatar} alt={`Avatar ${idx}`} className="w-full h-full rounded-lg" />
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <form onSubmit={handleUpdateProfile} className="p-8 space-y-8">
           <div className="grid grid-cols-1 gap-8">
@@ -486,6 +569,40 @@ export default function SettingsPage() {
                 </select>
               </div>
             </div>
+
+            {/* Security Question Setup */}
+            <div className="pt-4 border-t border-gray-100">
+              <h4 className="text-xs font-black uppercase tracking-widest text-gray-400 flex items-center gap-2 mb-6">
+                <HelpCircle className="w-3 h-3" /> Security Question Setup
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-gray-400 uppercase">Security Question</label>
+                  <select
+                    value={securityQuestion}
+                    onChange={(e) => setSecurityQuestion(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#5A5A40] outline-none transition-all text-sm"
+                  >
+                    <option value="">Select a question</option>
+                    <option>What was the name of your first pet?</option>
+                    <option>What is your mother's maiden name?</option>
+                    <option>What was the name of your elementary school?</option>
+                    <option>In what city were you born?</option>
+                    <option>What is your favorite book?</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-gray-400 uppercase">Security Answer</label>
+                  <input
+                    type="text"
+                    value={securityAnswerInput}
+                    onChange={(e) => setSecurityAnswerInput(e.target.value)}
+                    placeholder="Enter your answer"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#5A5A40] outline-none transition-all text-sm"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="pt-4 flex items-center justify-between border-t border-gray-100">
@@ -578,21 +695,40 @@ export default function SettingsPage() {
             <h3 className="text-xl font-serif font-bold">Data Management</h3>
           </div>
           <div className="space-y-4">
-            <p className="text-sm text-gray-500">Export your account data and history for your records.</p>
-            <button 
-              onClick={() => {
-                const data = JSON.stringify(profile, null, 2);
-                const blob = new Blob([data], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `EduTrack-Data-${profile?.uid}.json`;
-                a.click();
-              }}
-              className="w-full py-4 bg-gray-50 text-gray-600 rounded-2xl font-bold hover:bg-gray-100 transition-all flex items-center justify-center gap-2 border border-gray-100"
-            >
-              <DownloadCloud className="w-5 h-5" /> Export My Data
-            </button>
+            <p className="text-sm text-gray-500">Export your account data or reset local application preferences.</p>
+            <div className="grid grid-cols-1 gap-3">
+              <button 
+                onClick={() => {
+                  try {
+                    const data = JSON.stringify(profile, null, 2);
+                    const blob = new Blob([data], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `EduTrack-Data-${profile?.uid || 'user'}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  } catch (err) {
+                    console.error('Export failed:', err);
+                    alert('Failed to export data. Please try again.');
+                  }
+                }}
+                className="w-full py-4 bg-gray-50 text-gray-600 rounded-2xl font-bold hover:bg-gray-100 transition-all flex items-center justify-center gap-2 border border-gray-100"
+              >
+                <DownloadCloud className="w-5 h-5" /> Export My Data
+              </button>
+              <button 
+                onClick={() => {
+                  if (window.confirm('Clear all local application cache? This will reset your theme and local preferences.')) {
+                    localStorage.clear();
+                    window.location.reload();
+                  }
+                }}
+                className="w-full py-4 bg-red-50 text-red-600 rounded-2xl font-bold hover:bg-red-100 transition-all flex items-center justify-center gap-2 border border-red-100"
+              >
+                <X className="w-5 h-5" /> Clear Local Cache
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import LoginPage from './pages/LoginPage';
@@ -14,12 +14,14 @@ import SettingsPage from './pages/SettingsPage';
 import AssignmentDetailsPage from './pages/AssignmentDetailsPage';
 import LabDetailsPage from './pages/LabDetailsPage';
 import NotificationsPage from './pages/NotificationsPage';
+import UserManagementPage from './pages/UserManagementPage';
 
 function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) {
   const { user, profile, loading } = useAuth();
 
   if (loading) return <div className="flex items-center justify-center h-screen">Loading...</div>;
   if (!user) return <Navigate to="/login" />;
+  if (profile && profile.active === false) return <div className="flex items-center justify-center h-screen">Your account has been deactivated. Please contact an administrator.</div>;
   if (allowedRoles && profile && !allowedRoles.includes(profile.role)) return <Navigate to="/" />;
 
   return <>{children}</>;
@@ -33,9 +35,43 @@ function RoleBasedDashboard() {
   return <StudentDashboard />;
 }
 
+function ThemeHandler() {
+  const { profile } = useAuth();
+  
+  useEffect(() => {
+    const theme = profile?.theme || 'light';
+    const root = window.document.documentElement;
+    
+    const applyTheme = (t: string) => {
+      if (t === 'dark') {
+        root.classList.add('dark');
+      } else if (t === 'light') {
+        root.classList.remove('dark');
+      } else if (t === 'system') {
+        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        if (systemTheme === 'dark') root.classList.add('dark');
+        else root.classList.remove('dark');
+      }
+    };
+
+    applyTheme(theme);
+
+    // Listen for system theme changes if set to system
+    if (theme === 'system') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleChange = () => applyTheme('system');
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    }
+  }, [profile?.theme]);
+
+  return null;
+}
+
 export default function App() {
   return (
     <AuthProvider>
+      <ThemeHandler />
       <Router>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
@@ -99,6 +135,13 @@ export default function App() {
             <ProtectedRoute>
               <DashboardLayout>
                 <NotificationsPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/users" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <DashboardLayout>
+                <UserManagementPage />
               </DashboardLayout>
             </ProtectedRoute>
           } />

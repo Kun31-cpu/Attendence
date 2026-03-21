@@ -13,7 +13,10 @@ import {
   ExternalLink,
   Award,
   MessageSquare,
-  Upload
+  Upload,
+  Search,
+  Filter,
+  ArrowUpDown
 } from 'lucide-react';
 import { db } from '../firebase';
 import { doc, getDoc, collection, query, where, onSnapshot, updateDoc, serverTimestamp, addDoc } from 'firebase/firestore';
@@ -45,6 +48,31 @@ export default function AssignmentDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [gradingId, setGradingId] = useState<string | null>(null);
   const [gradeData, setGradeData] = useState({ marks: 0, feedback: '' });
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'date' | 'name' | 'marks'>('date');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'submitted' | 'graded'>('all');
+
+  const filteredSubmissions = submissions
+    .filter(sub => {
+      const matchesSearch = sub.studentName?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesStatus = filterStatus === 'all' || sub.status === filterStatus;
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'date') {
+        const dateA = a.submittedAt?.toDate ? a.submittedAt.toDate().getTime() : 0;
+        const dateB = b.submittedAt?.toDate ? b.submittedAt.toDate().getTime() : 0;
+        return dateB - dateA;
+      }
+      if (sortBy === 'name') {
+        return (a.studentName || '').localeCompare(b.studentName || '');
+      }
+      if (sortBy === 'marks') {
+        return (b.marks || 0) - (a.marks || 0);
+      }
+      return 0;
+    });
 
   useEffect(() => {
     if (!id) return;
@@ -249,6 +277,166 @@ export default function AssignmentDetailsPage() {
             </div>
           </motion.div>
 
+          {/* Faculty/Admin View: Detailed Submissions History */}
+          {(profile?.role === 'faculty' || profile?.role === 'admin') && (
+            <motion.div 
+              variants={itemVariants}
+              className="glass-effect rounded-[3rem] p-8 md:p-12 border border-white/40 shadow-xl"
+            >
+              <div className="flex flex-col space-y-8 mb-10">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  <h2 className="text-3xl font-playfair font-black text-gray-900">Submission History</h2>
+                  <div className="flex flex-wrap items-center gap-4">
+                    <div className="relative group w-full md:w-64">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-[#5A5A40] transition-colors" />
+                      <input 
+                        type="text" 
+                        placeholder="Search students..."
+                        className="w-full pl-10 pr-4 py-3 rounded-2xl bg-white/40 border border-white/60 focus:ring-4 focus:ring-[#5A5A40]/5 focus:border-[#5A5A40]/30 outline-none text-xs transition-all font-bold"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 bg-white/40 p-1.5 rounded-2xl border border-white/60">
+                      <button 
+                        onClick={() => setSortBy('date')}
+                        className={cn("px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", sortBy === 'date' ? "bg-[#5A5A40] text-white" : "text-gray-400 hover:text-[#5A5A40]")}
+                      >
+                        Date
+                      </button>
+                      <button 
+                        onClick={() => setSortBy('name')}
+                        className={cn("px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", sortBy === 'name' ? "bg-[#5A5A40] text-white" : "text-gray-400 hover:text-[#5A5A40]")}
+                      >
+                        Name
+                      </button>
+                      <button 
+                        onClick={() => setSortBy('marks')}
+                        className={cn("px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", sortBy === 'marks' ? "bg-[#5A5A40] text-white" : "text-gray-400 hover:text-[#5A5A40]")}
+                      >
+                        Marks
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 overflow-x-auto pb-2 custom-scrollbar">
+                  <button 
+                    onClick={() => setFilterStatus('all')}
+                    className={cn(
+                      "px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all whitespace-nowrap",
+                      filterStatus === 'all' ? "bg-[#5A5A40] text-white border-[#5A5A40]" : "bg-white/40 text-gray-500 border-white/60 hover:border-[#5A5A40]/30"
+                    )}
+                  >
+                    All Submissions
+                  </button>
+                  <button 
+                    onClick={() => setFilterStatus('submitted')}
+                    className={cn(
+                      "px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all whitespace-nowrap",
+                      filterStatus === 'submitted' ? "bg-blue-500 text-white border-blue-500" : "bg-blue-50/50 text-blue-600 border-blue-100 hover:border-blue-300"
+                    )}
+                  >
+                    Pending Review
+                  </button>
+                  <button 
+                    onClick={() => setFilterStatus('graded')}
+                    className={cn(
+                      "px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all whitespace-nowrap",
+                      filterStatus === 'graded' ? "bg-emerald-500 text-white border-emerald-500" : "bg-emerald-50/50 text-emerald-600 border-emerald-100 hover:border-emerald-300"
+                    )}
+                  >
+                    Graded
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                {filteredSubmissions.length === 0 ? (
+                  <div className="text-center py-20 border-2 border-dashed border-white/40 rounded-[3rem] bg-white/10">
+                    <FileText className="w-16 h-16 text-gray-200 mx-auto mb-4" />
+                    <p className="text-gray-500 italic font-serif text-lg">No submissions match your criteria</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-6">
+                    {filteredSubmissions.map((sub) => (
+                      <div 
+                        key={sub.id}
+                        className={cn(
+                          "p-8 rounded-[2.5rem] border transition-all relative group",
+                          gradingId === sub.id ? "bg-[#5A5A40]/5 border-[#5A5A40] shadow-inner" : "bg-white/40 border-white/60 hover:bg-white/60 hover:shadow-lg"
+                        )}
+                      >
+                        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+                          <div className="flex items-start gap-6">
+                            <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                              <User className="w-8 h-8 text-[#5A5A40]" />
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-xl font-bold text-gray-900">{sub.studentName || 'Unknown Student'}</p>
+                              <div className="flex items-center gap-3 text-xs text-gray-500 font-serif italic">
+                                <Clock className="w-3 h-3" />
+                                Submitted {sub.submittedAt?.toDate ? format(sub.submittedAt.toDate(), 'PPP p') : 'just now'}
+                              </div>
+                              <div className="flex items-center gap-2 mt-3">
+                                <span className={cn(
+                                  "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border shadow-sm",
+                                  sub.status === 'graded' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-blue-50 text-blue-600 border-blue-100"
+                                )}>
+                                  {sub.status}
+                                </span>
+                                {sub.status === 'graded' && (
+                                  <span className="text-[10px] font-black text-[#5A5A40] bg-white/80 px-3 py-1 rounded-full border border-black/5">
+                                    {sub.marks} / {assignment.maxMarks} Points
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            <a 
+                              href={sub.fileUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 px-5 py-3 rounded-xl bg-white/80 text-[#5A5A40] hover:bg-[#5A5A40] hover:text-white transition-all border border-black/5 font-black text-[10px] uppercase tracking-widest shadow-sm"
+                            >
+                              <Download className="w-4 h-4" />
+                              View File
+                            </a>
+                            <button 
+                              onClick={() => {
+                                setGradingId(sub.id);
+                                setGradeData({ marks: sub.marks || 0, feedback: sub.feedback || '' });
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                              }}
+                              className={cn(
+                                "px-8 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all shadow-sm",
+                                gradingId === sub.id ? "bg-[#5A5A40] text-white" : "bg-white/80 text-[#5A5A40] hover:bg-white"
+                              )}
+                            >
+                              {sub.status === 'graded' ? 'Update Grade' : 'Grade Now'}
+                            </button>
+                          </div>
+                        </div>
+
+                        {sub.feedback && (
+                          <div className="mt-6 p-6 bg-white/60 rounded-2xl border border-black/5 relative">
+                            <div className="absolute top-4 right-4 opacity-10">
+                              <MessageSquare className="w-8 h-8 text-[#5A5A40]" />
+                            </div>
+                            <p className="text-[9px] font-black uppercase tracking-widest text-[#5A5A40]/40 mb-2">Feedback Provided</p>
+                            <p className="text-gray-700 font-serif italic text-sm leading-relaxed">"{sub.feedback}"</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+
           {/* Student View: My Submission */}
           {profile?.role === 'student' && (
             <motion.div 
@@ -407,7 +595,12 @@ export default function AssignmentDetailsPage() {
                       <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
                         <Award className="w-5 h-5" />
                       </div>
-                      <h3 className="font-bold text-gray-900">Grade Submission</h3>
+                      <div>
+                        <h3 className="font-bold text-gray-900">Grade Submission</h3>
+                        <p className="text-[10px] text-gray-500 font-serif italic">
+                          Grading: {submissions.find(s => s.id === gradingId)?.studentName}
+                        </p>
+                      </div>
                     </div>
                     
                     <div className="space-y-5">

@@ -9,6 +9,7 @@ import {
   Video, 
   LogOut, 
   User,
+  Users,
   Menu,
   X,
   ShieldAlert
@@ -23,6 +24,7 @@ const navItems = [
   { icon: FileText, label: 'Assignments', path: '/assignments' },
   { icon: Beaker, label: 'Labs', path: '/labs' },
   { icon: Video, label: 'Video Library', path: '/videos' },
+  { icon: Users, label: 'Users', path: '/users' },
   { icon: User, label: 'Settings', path: '/settings' },
 ];
 
@@ -118,6 +120,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const filteredNavItems = navItems.filter(item => {
     if (item.label === 'Settings' && profile?.role === 'student') return false;
+    if (item.label === 'Users' && profile?.role !== 'admin') return false;
     return true;
   });
 

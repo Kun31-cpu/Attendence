@@ -26,15 +26,22 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
       allow create: if isAuthenticated() && isOwner(userId) && 
                       isValidString(request.resource.data.displayName, 1, 100) &&
                       (request.resource.data.role == 'student' || 
                        (request.auth.token.email == "beraniranjan722@gmail.com" && request.resource.data.role == 'admin'));
       allow update: if (isOwner(userId) && 
                         request.resource.data.role == resource.data.role &&
+                        request.resource.data.active == resource.data.active &&
                         isValidString(request.resource.data.displayName, 1, 100)) || 
                       isAdmin();
       allow delete: if isAdmin();
+    }
+
+    match /batches/{batchId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
     }
 
     match /departments/{deptId} {
@@ -93,8 +100,16 @@ service cloud.firestore {
     }
 
     match /videos/{videoId} {
-      allow read: if isAuthenticated();
-      allow write: if isFaculty();
+      allow read: if isAuthenticated() && (
+        resource.data.visibility == 'public' || 
+        resource.data.visibility == 'unlisted' || 
+        resource.data.facultyId == request.auth.uid || 
+        isAdmin()
+      );
+      allow write: if isFaculty() && (
+        request.resource.data.facultyId == request.auth.uid || 
+        isAdmin()
+      );
     }
 
     match /attendance_sessions/{sessionId} {
