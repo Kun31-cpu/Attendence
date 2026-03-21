@@ -8,6 +8,8 @@
         "uid": { "type": "string", "description": "Firebase Auth UID" },
         "email": { "type": "string", "format": "email" },
         "displayName": { "type": "string" },
+        "bannerName": { "type": "string", "description": "Custom banner title for dashboard" },
+        "bannerDescription": { "type": "string", "description": "Custom banner description for dashboard" },
         "role": { "type": "string", "enum": ["admin", "faculty", "student"] },
         "departmentId": { "type": "string", "description": "Reference to Department" },
         "createdAt": { "type": "string", "format": "date-time" }

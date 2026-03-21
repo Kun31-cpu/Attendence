@@ -151,8 +151,8 @@ export default function LoginPage() {
               </motion.div>
             </div>
             
-            <h1 className="text-5xl font-playfair font-black text-white tracking-tighter mb-3">EduTrack Pro</h1>
-            <p className="text-white/60 mb-12 font-montserrat font-medium italic text-lg leading-relaxed">
+            <h1 className="text-4xl font-playfair font-black text-white tracking-tighter mb-3">EduTrack Pro</h1>
+            <p className="text-white/60 mb-12 font-montserrat font-medium italic text-base leading-relaxed">
               {authMode === 'forgot-password' ? 'Reset Your Password' : 'Smart Faculty & Classroom Automation'}
             </p>
             
@@ -327,7 +327,7 @@ export default function LoginPage() {
               <div className="w-24 h-24 bg-amber-500/10 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-inner">
                 <ShieldCheck className="w-12 h-12 text-amber-500" />
               </div>
-              <h2 className="text-4xl font-playfair font-black text-white tracking-tight">Security Setup</h2>
+              <h2 className="text-3xl font-playfair font-black text-white tracking-tight">Security Setup</h2>
               <p className="text-white/60 mt-3 font-montserrat font-medium italic">Set a security question for future verification.</p>
             </div>
 
@@ -377,7 +377,7 @@ export default function LoginPage() {
               <div className="w-24 h-24 bg-blue-500/10 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-inner">
                 <HelpCircle className="w-12 h-12 text-blue-400" />
               </div>
-              <h2 className="text-4xl font-playfair font-black text-white tracking-tight">Verification</h2>
+              <h2 className="text-3xl font-playfair font-black text-white tracking-tight">Verification</h2>
               <p className="text-white/60 mt-3 font-montserrat font-medium italic">Answer your security question to continue.</p>
             </div>
 

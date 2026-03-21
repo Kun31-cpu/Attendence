@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { QRCodeSVG } from 'qrcode.react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, Variants } from 'motion/react';
 import { Html5QrcodeScanner, Html5Qrcode } from 'html5-qrcode';
 import { 
   QrCode, 
@@ -45,7 +45,7 @@ function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   return R * c;
 }
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -55,7 +55,7 @@ const containerVariants = {
   }
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
@@ -394,10 +394,10 @@ export default function AttendancePage() {
             <span className="h-px w-12 bg-[#5A5A40]/30" />
             <span className="text-[10px] uppercase tracking-[0.3em] font-montserrat font-black text-[#5A5A40]/60">Presence Tracking</span>
           </div>
-          <h1 className="text-6xl md:text-8xl font-playfair font-black tracking-tighter leading-[0.9] text-stone-900">
+          <h1 className="text-4xl md:text-6xl font-playfair font-black tracking-tighter leading-[0.9] text-stone-900">
             Attendance<span className="text-[#5A5A40]">.</span>
           </h1>
-          <p className="text-xl text-stone-500 font-montserrat font-medium italic max-w-md leading-relaxed">
+          <p className="text-lg text-stone-500 font-montserrat font-medium italic max-w-md leading-relaxed">
             {profile?.role === 'faculty' 
               ? 'Orchestrate classroom presence with precision and real-time insights.' 
               : 'Maintain your academic consistency and track your journey through knowledge.'}
@@ -555,7 +555,13 @@ export default function AttendancePage() {
                   <div className="flex-1 overflow-y-auto pr-2 space-y-5 custom-scrollbar">
                     <AnimatePresence mode="popLayout">
                       {activeTab === 'live' ? (
-                        <>
+                        <motion.div 
+                          key="live-tab"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="space-y-5"
+                        >
                           {isHosting && sessionAttendees.map((log, i) => (
                             <motion.div 
                               layout
@@ -587,9 +593,15 @@ export default function AttendancePage() {
                               <p className="font-playfair italic text-2xl text-stone-600">Waiting for participants...</p>
                             </div>
                           )}
-                        </>
+                        </motion.div>
                       ) : (
-                        <div className="space-y-5">
+                        <motion.div 
+                          key="history-tab"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="space-y-5"
+                        >
                           <div className="flex gap-4 mb-8">
                             <input 
                               type="date" 
@@ -624,7 +636,7 @@ export default function AttendancePage() {
                                 </span>
                               </motion.div>
                             ))}
-                        </div>
+                        </motion.div>
                       )}
                     </AnimatePresence>
                   </div>
@@ -717,7 +729,7 @@ export default function AttendancePage() {
                             className="space-y-10"
                           >
                             <div className="space-y-3">
-                              <h3 className="text-4xl font-playfair font-black text-stone-900">Mark Presence</h3>
+                              <h3 className="text-2xl md:text-3xl font-playfair font-black text-stone-900">Mark Presence</h3>
                               <p className="text-sm text-stone-500 font-montserrat font-medium italic">Scan the classroom QR to verify your attendance.</p>
                             </div>
 

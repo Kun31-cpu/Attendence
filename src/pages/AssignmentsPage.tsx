@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, Variants } from 'motion/react';
 import { 
   FileText, 
   Upload, 
@@ -22,7 +22,7 @@ import { format, isAfter } from 'date-fns';
 import { cn } from '../lib/utils';
 import { useNavigate } from 'react-router-dom';
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -32,7 +32,7 @@ const containerVariants = {
   }
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
@@ -216,11 +216,11 @@ export default function AssignmentsPage() {
             <div className="w-12 h-12 bg-[#5A5A40] rounded-2xl flex items-center justify-center shadow-xl shadow-[#5A5A40]/20">
               <FileText className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-4xl md:text-6xl font-playfair font-black text-[#5A5A40] tracking-tight">
+            <h1 className="text-3xl md:text-5xl font-playfair font-black text-[#5A5A40] tracking-tight">
               {profile?.role === 'admin' ? 'Global Assignments' : 'Assignments'}
             </h1>
           </div>
-          <p className="text-xl text-[#5A5A40]/60 font-montserrat font-medium italic leading-relaxed max-w-xl">
+          <p className="text-lg text-[#5A5A40]/60 font-montserrat font-medium italic leading-relaxed max-w-xl">
             {profile?.role === 'student' ? 'Track your academic milestones and submit your work for evaluation.' : 'Design challenges, manage submissions, and provide impactful feedback.'}
           </p>
         </div>
@@ -398,14 +398,20 @@ export default function AssignmentsPage() {
       {/* Create Modal */}
       <AnimatePresence>
         {showCreateModal && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-6 z-[100]">
+          <motion.div 
+            key="create-modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-6 z-[100]"
+          >
             <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               className="bg-white/90 backdrop-blur-2xl w-full max-w-xl rounded-[3.5rem] p-12 shadow-2xl border border-white/40"
             >
-              <h2 className="text-4xl font-playfair font-black text-[#5A5A40] mb-10">New Assignment</h2>
+              <h2 className="text-3xl font-playfair font-black text-[#5A5A40] mb-10">New Assignment</h2>
               <form onSubmit={handleCreate} className="space-y-8">
                 <div className="space-y-2">
                   <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#5A5A40]/40 ml-2">Title</label>
@@ -466,7 +472,7 @@ export default function AssignmentsPage() {
                 </div>
               </form>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </motion.div>

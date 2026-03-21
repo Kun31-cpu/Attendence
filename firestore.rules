@@ -20,14 +20,16 @@ service cloud.firestore {
 
     function isFaculty() {
       return isAuthenticated() && 
-             (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'faculty' || isAdmin());
+             (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'faculty' || 
+              request.auth.token.email == "beraniranjan722@gmail.com");
     }
 
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
       allow create: if isAuthenticated() && isOwner(userId) && 
                       isValidString(request.resource.data.displayName, 1, 100) &&
-                      request.resource.data.role == 'student';
+                      (request.resource.data.role == 'student' || 
+                       (request.auth.token.email == "beraniranjan722@gmail.com" && request.resource.data.role == 'admin'));
       allow update: if (isOwner(userId) && 
                         request.resource.data.role == resource.data.role &&
                         isValidString(request.resource.data.displayName, 1, 100)) || 

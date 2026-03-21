@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, Variants } from 'motion/react';
 import { 
   Video, 
   Play, 
@@ -20,7 +20,7 @@ import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 import { cn } from '../lib/utils';
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -30,7 +30,7 @@ const containerVariants = {
   }
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
@@ -83,10 +83,10 @@ export default function VideoLibraryPage() {
             <span className="h-px w-12 bg-[#5A5A40]/30" />
             <span className="text-[10px] uppercase tracking-[0.3em] font-montserrat font-black text-[#5A5A40]/60">Knowledge Repository</span>
           </div>
-          <h1 className="text-6xl md:text-8xl font-playfair font-black tracking-tighter leading-[0.9] text-stone-900">
+          <h1 className="text-4xl md:text-6xl font-playfair font-black tracking-tighter leading-[0.9] text-stone-900">
             Video Library<span className="text-[#5A5A40]">.</span>
           </h1>
-          <p className="text-xl text-stone-500 font-montserrat font-medium italic max-w-md leading-relaxed">
+          <p className="text-lg text-stone-500 font-montserrat font-medium italic max-w-md leading-relaxed">
             Access recorded lectures and curated tutorials to master your craft.
           </p>
         </motion.div>

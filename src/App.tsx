@@ -12,6 +12,7 @@ import LabsPage from './pages/LabsPage';
 import VideoLibraryPage from './pages/VideoLibraryPage';
 import SettingsPage from './pages/SettingsPage';
 import AssignmentDetailsPage from './pages/AssignmentDetailsPage';
+import LabDetailsPage from './pages/LabDetailsPage';
 import NotificationsPage from './pages/NotificationsPage';
 
 function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) {
@@ -70,6 +71,13 @@ export default function App() {
             <ProtectedRoute>
               <DashboardLayout>
                 <LabsPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/labs/:id" element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <LabDetailsPage />
               </DashboardLayout>
             </ProtectedRoute>
           } />

@@ -167,7 +167,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Role Switch Password Modal */}
       <AnimatePresence>
         {showPasswordModal && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <motion.div 
+            key="password-modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-center justify-center p-4"
+          >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -213,7 +219,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </div>
               </div>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
 

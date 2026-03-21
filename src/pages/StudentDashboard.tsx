@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, Variants } from 'motion/react';
 import { cn } from '../lib/utils';
 import { 
   Calendar, 
@@ -30,16 +30,11 @@ import {
 import { useNotifications } from '../hooks/useNotifications';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import { db } from '../firebase';
+import { collection, query, where, onSnapshot, getDocs } from 'firebase/firestore';
+import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 
-const performanceData = [
-  { name: 'Math', attendance: 85, marks: 78 },
-  { name: 'Physics', attendance: 92, marks: 88 },
-  { name: 'CS', attendance: 78, marks: 92 },
-  { name: 'English', attendance: 95, marks: 85 },
-  { name: 'Chemistry', attendance: 88, marks: 82 },
-];
-
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -49,7 +44,7 @@ const containerVariants = {
   }
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
@@ -66,6 +61,74 @@ export default function StudentDashboard() {
   const { profile } = useAuth();
   const { notifications, markAsRead } = useNotifications();
   const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    attendance: '0%',
+    avgMarks: '0.0',
+    labsDone: '0/0',
+    pendingAssignments: '0'
+  });
+  const [performanceData, setPerformanceData] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!profile?.uid) return;
+
+    // Fetch Attendance
+    const attQuery = query(collection(db, 'attendance'), where('studentId', '==', profile.uid));
+    const unsubscribeAtt = onSnapshot(attQuery, (snapshot) => {
+      const docs = snapshot.docs;
+      const present = docs.filter(d => d.data().status === 'present').length;
+      const total = docs.length || 1;
+      const percentage = Math.round((present / total) * 100);
+      setStats(prev => ({ ...prev, attendance: `${percentage}%` }));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'attendance'));
+
+    // Fetch Marks
+    const marksQuery = query(collection(db, 'marks'), where('studentId', '==', profile.uid));
+    const unsubscribeMarks = onSnapshot(marksQuery, (snapshot) => {
+      const docs = snapshot.docs.map(d => d.data());
+      const avg = docs.length > 0 ? (docs.reduce((acc, curr) => acc + (curr.totalMarks || 0), 0) / docs.length).toFixed(1) : '0.0';
+      setStats(prev => ({ ...prev, avgMarks: avg }));
+      
+      // Update performance data for chart
+      const chartData = docs.map(d => ({
+        name: d.subjectId || 'Subject',
+        marks: d.totalMarks || 0,
+        attendance: 0 // Will be updated below
+      }));
+      setPerformanceData(chartData);
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'marks'));
+
+    // Fetch Labs
+    const labsQuery = query(collection(db, 'lab_submissions'), where('studentId', '==', profile.uid));
+    const allLabsQuery = query(collection(db, 'labs'));
+    
+    const unsubscribeLabs = onSnapshot(labsQuery, (subSnap) => {
+      onSnapshot(allLabsQuery, (labsSnap) => {
+        const done = subSnap.docs.length;
+        const total = labsSnap.docs.length;
+        setStats(prev => ({ ...prev, labsDone: `${done}/${total}` }));
+      });
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'lab_submissions'));
+
+    // Fetch Assignments
+    const asgnQuery = query(collection(db, 'assignments'));
+    const subQuery = query(collection(db, 'submissions'), where('studentId', '==', profile.uid));
+    
+    const unsubscribeAsgn = onSnapshot(asgnQuery, (asgnSnap) => {
+      onSnapshot(subQuery, (subSnap) => {
+        const submittedIds = new Set(subSnap.docs.map(d => d.data().assignmentId));
+        const pending = asgnSnap.docs.filter(d => !submittedIds.has(d.id)).length;
+        setStats(prev => ({ ...prev, pendingAssignments: `${pending} Pending` }));
+      });
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'assignments'));
+
+    return () => {
+      unsubscribeAtt();
+      unsubscribeMarks();
+      unsubscribeLabs();
+      unsubscribeAsgn();
+    };
+  }, [profile]);
 
   return (
     <motion.div 
@@ -100,11 +163,11 @@ export default function StudentDashboard() {
               <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#5A5A40]">Academic Excellence</span>
             </motion.div>
             
-            <h1 className="text-5xl md:text-8xl font-playfair font-black tracking-tight text-stone-900 leading-[0.9] mb-8">
+            <h1 className="text-4xl md:text-6xl font-playfair font-black tracking-tight text-stone-900 leading-[0.9] mb-8">
               {profile?.bannerName || `Hello, ${profile?.displayName?.split(' ')[0]}`}
             </h1>
             
-            <p className="text-xl text-stone-600 font-montserrat font-medium leading-relaxed max-w-xl italic">
+            <p className="text-lg text-stone-600 font-montserrat font-medium leading-relaxed max-w-xl italic">
               {profile?.bannerDescription || "Your academic journey is a marathon, not a sprint. Track your progress and reach your full potential."}
             </p>
             
@@ -127,7 +190,7 @@ export default function StudentDashboard() {
           <div className="hidden lg:block relative">
             <div className="w-64 h-64 rounded-[3rem] bg-stone-100 border border-white/50 shadow-inner flex items-center justify-center overflow-hidden">
               <div className="text-center">
-                <p className="text-6xl font-playfair font-black text-[#5A5A40]">88%</p>
+                <p className="text-6xl font-playfair font-black text-[#5A5A40]">{stats.attendance}</p>
                 <p className="text-xs font-montserrat font-black uppercase tracking-widest opacity-40 mt-2">Attendance</p>
               </div>
             </div>
@@ -145,10 +208,10 @@ export default function StudentDashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {[
-          { label: 'Attendance', value: '88%', icon: Calendar, color: 'text-blue-600', bg: 'bg-blue-500/10', border: 'border-blue-100/50' },
-          { label: 'Avg Marks', value: '85.5', icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-500/10', border: 'border-emerald-100/50' },
-          { label: 'Labs Done', value: '12/15', icon: CheckCircle2, color: 'text-purple-600', bg: 'bg-purple-500/10', border: 'border-purple-100/50' },
-          { label: 'Assignments', value: '3 Pending', icon: Clock, color: 'text-orange-600', bg: 'bg-orange-500/10', border: 'border-orange-100/50' },
+          { label: 'Attendance', value: stats.attendance, icon: Calendar, color: 'text-blue-600', bg: 'bg-blue-500/10', border: 'border-blue-100/50' },
+          { label: 'Avg Marks', value: stats.avgMarks, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-500/10', border: 'border-emerald-100/50' },
+          { label: 'Labs Done', value: stats.labsDone, icon: CheckCircle2, color: 'text-purple-600', bg: 'bg-purple-500/10', border: 'border-purple-100/50' },
+          { label: 'Assignments', value: stats.pendingAssignments, icon: Clock, color: 'text-orange-600', bg: 'bg-orange-500/10', border: 'border-orange-100/50' },
         ].map((stat, i) => (
           <motion.div
             key={stat.label}
@@ -163,7 +226,7 @@ export default function StudentDashboard() {
               <stat.icon className={cn("w-8 h-8", stat.color)} />
             </div>
             <p className="text-[10px] font-montserrat font-black uppercase tracking-[0.2em] opacity-40 mb-2">{stat.label}</p>
-            <p className="text-4xl font-playfair font-black tracking-tight text-stone-900">{stat.value}</p>
+            <p className="text-3xl font-playfair font-black tracking-tight text-stone-900">{stat.value}</p>
           </motion.div>
         ))}
       </div>
@@ -176,7 +239,7 @@ export default function StudentDashboard() {
         >
           <div className="flex items-center justify-between mb-12">
             <div>
-              <h3 className="text-3xl font-playfair font-bold text-stone-900">Academic Performance</h3>
+              <h3 className="text-2xl md:text-3xl font-playfair font-bold text-stone-900">Academic Performance</h3>
               <p className="text-sm font-montserrat font-medium text-stone-500 mt-1">Comparison between attendance and marks</p>
             </div>
             <div className="flex items-center gap-3 px-5 py-2.5 bg-[#5A5A40]/5 rounded-full border border-[#5A5A40]/10">
@@ -187,7 +250,7 @@ export default function StudentDashboard() {
           
           <div className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={performanceData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+              <BarChart data={performanceData.length > 0 ? performanceData : [{ name: 'No Data', marks: 0, attendance: 0 }]} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorAttendance" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#5A5A40" stopOpacity={0.8}/>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNotifications } from '../hooks/useNotifications';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, Variants } from 'motion/react';
 import { 
   Bell, 
   Check, 
@@ -20,7 +20,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { cn } from '../lib/utils';
 import { useNavigate } from 'react-router-dom';
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -30,7 +30,7 @@ const containerVariants = {
   }
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, x: -20 },
   visible: {
     opacity: 1,

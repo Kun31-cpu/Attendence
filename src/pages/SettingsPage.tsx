@@ -285,8 +285,8 @@ export default function SettingsPage() {
       </AnimatePresence>
 
       <header>
-        <h1 className="text-3xl font-serif font-bold text-gray-900">Account Settings</h1>
-        <p className="text-gray-500 font-serif italic">Manage your profile and security preferences.</p>
+        <h1 className="text-3xl md:text-4xl font-playfair font-black text-stone-900 tracking-tight">Account Settings</h1>
+        <p className="text-lg text-stone-500 font-montserrat font-medium italic opacity-80">Manage your profile and security preferences.</p>
       </header>
 
       <div className="bg-white rounded-3xl border border-black/5 shadow-sm overflow-hidden">

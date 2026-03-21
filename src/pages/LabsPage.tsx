@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, Variants } from 'motion/react';
 import { 
   Beaker, 
   Trophy, 
@@ -18,11 +18,11 @@ import {
   FlaskConical
 } from 'lucide-react';
 import { db } from '../firebase';
-import { collection, query, onSnapshot, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy, addDoc, serverTimestamp, where } from 'firebase/firestore';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 import { cn } from '../lib/utils';
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -32,7 +32,7 @@ const containerVariants = {
   }
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
@@ -45,22 +45,42 @@ const itemVariants = {
   }
 };
 
+import { useNavigate } from 'react-router-dom';
+
 export default function LabsPage() {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const [labs, setLabs] = useState<any[]>([]);
+  const [submissions, setSubmissions] = useState<Record<string, any>>({});
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newLab, setNewLab] = useState({ title: '', difficulty: 'easy', weight: 10 });
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const q = query(collection(db, 'labs'), orderBy('difficulty', 'asc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribeLabs = onSnapshot(q, (snapshot) => {
       setLabs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     }, (err) => {
       handleFirestoreError(err, OperationType.LIST, 'labs');
     });
-    return () => unsubscribe();
-  }, []);
+
+    let unsubscribeSubs = () => {};
+    if (profile?.uid && profile.role === 'student') {
+      const subQ = query(collection(db, 'lab_submissions'), where('studentId', '==', profile.uid));
+      unsubscribeSubs = onSnapshot(subQ, (snapshot) => {
+        const subs: Record<string, any> = {};
+        snapshot.docs.forEach(doc => {
+          subs[doc.data().labId] = doc.data();
+        });
+        setSubmissions(subs);
+      }, (err) => handleFirestoreError(err, OperationType.LIST, 'lab_submissions'));
+    }
+
+    return () => {
+      unsubscribeLabs();
+      unsubscribeSubs();
+    };
+  }, [profile]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,6 +88,7 @@ export default function LabsPage() {
       await addDoc(collection(db, 'labs'), {
         ...newLab,
         facultyId: profile?.uid,
+        facultyName: profile?.displayName,
         createdAt: serverTimestamp(),
       });
       setShowCreateModal(false);
@@ -77,11 +98,14 @@ export default function LabsPage() {
     }
   };
 
-  const filteredLabs = labs.filter(lab => 
+  const filteredLabs = labs.map(lab => ({
+    ...lab,
+    completed: !!submissions[lab.id]
+  })).filter(lab => 
     lab.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const completionRate = labs.length > 0 ? (labs.filter(l => l.completed).length / labs.length) * 100 : 0;
+  const completionRate = labs.length > 0 ? (Object.keys(submissions).length / labs.length) * 100 : 0;
 
   return (
     <motion.div 
@@ -92,7 +116,7 @@ export default function LabsPage() {
     >
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <motion.div variants={itemVariants}>
-          <h1 className="text-4xl md:text-5xl font-playfair font-black text-stone-900 tracking-tight mb-2">
+          <h1 className="text-3xl md:text-4xl font-playfair font-black text-stone-900 tracking-tight mb-2">
             {profile?.role === 'student' ? 'Laboratory Hub' : 'Lab Administration'}
           </h1>
           <p className="text-stone-500 font-montserrat font-medium italic">
@@ -224,19 +248,28 @@ export default function LabsPage() {
             <div className="flex flex-col gap-3">
               {profile?.role === 'student' ? (
                 lab.completed ? (
-                  <button className="w-12 h-12 bg-stone-100 rounded-2xl flex items-center justify-center text-stone-400 hover:text-[#5A5A40] hover:bg-white transition-all shadow-sm">
+                  <button 
+                    onClick={() => navigate(`/labs/${lab.id}`)}
+                    className="w-12 h-12 bg-stone-100 rounded-2xl flex items-center justify-center text-stone-400 hover:text-[#5A5A40] hover:bg-white transition-all shadow-sm"
+                  >
                     <Github className="w-6 h-6" />
                   </button>
                 ) : (
-                  <button className="px-6 py-3 bg-[#5A5A40] text-white rounded-2xl text-xs font-montserrat font-bold uppercase tracking-widest hover:bg-[#4A4A30] transition-all flex items-center gap-2 shadow-lg shadow-[#5A5A40]/20 active:scale-95">
+                  <button 
+                    onClick={() => navigate(`/labs/${lab.id}`)}
+                    className="px-6 py-3 bg-[#5A5A40] text-white rounded-2xl text-xs font-montserrat font-bold uppercase tracking-widest hover:bg-[#4A4A30] transition-all flex items-center gap-2 shadow-lg shadow-[#5A5A40]/20 active:scale-95"
+                  >
                     <Zap className="w-4 h-4" /> Start
                   </button>
                 )
               ) : (
-                <div className="flex items-center gap-2 px-4 py-2 bg-stone-50 rounded-xl text-[10px] text-stone-500 font-montserrat font-black uppercase tracking-widest">
+                <button 
+                  onClick={() => navigate(`/labs/${lab.id}`)}
+                  className="flex items-center gap-2 px-4 py-2 bg-stone-50 rounded-xl text-[10px] text-stone-500 font-montserrat font-black uppercase tracking-widest hover:bg-white transition-all"
+                >
                   <Users className="w-4 h-4" />
-                  <span>24 Done</span>
-                </div>
+                  <span>Manage</span>
+                </button>
               )}
             </div>
           </motion.div>
@@ -246,7 +279,13 @@ export default function LabsPage() {
       {/* Create Modal */}
       <AnimatePresence>
         {showCreateModal && (
-          <div className="fixed inset-0 bg-stone-900/40 backdrop-blur-md flex items-center justify-center p-4 z-[100]">
+          <motion.div 
+            key="create-modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-stone-900/40 backdrop-blur-md flex items-center justify-center p-4 z-[100]"
+          >
             <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -262,7 +301,7 @@ export default function LabsPage() {
                 <X className="w-6 h-6 text-stone-400" />
               </button>
 
-              <h2 className="text-4xl font-playfair font-black text-stone-900 mb-2">New Experiment</h2>
+              <h2 className="text-3xl font-playfair font-black text-stone-900 mb-2">New Experiment</h2>
               <p className="text-stone-500 font-montserrat font-medium mb-10">Define the parameters for the new practical session.</p>
               
               <form onSubmit={handleCreate} className="space-y-8">
@@ -321,7 +360,7 @@ export default function LabsPage() {
                 </div>
               </form>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </motion.div>

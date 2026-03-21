@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { motion } from 'motion/react';
+import { motion, Variants } from 'motion/react';
 import { cn } from '../lib/utils';
 import { 
   Users, 
@@ -22,17 +22,13 @@ import {
   Legend, 
   Tooltip 
 } from 'recharts';
-
-const data = [
-  { name: 'CS', value: 400 },
-  { name: 'Mechanical', value: 300 },
-  { name: 'Electrical', value: 300 },
-  { name: 'Civil', value: 200 },
-];
+import { db } from '../firebase';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 
 const COLORS = ['#10B981', '#34D399', '#6EE7B7', '#A7F3D0'];
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -42,7 +38,7 @@ const containerVariants = {
   }
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
@@ -57,6 +53,46 @@ const itemVariants = {
 
 export default function AdminDashboard() {
   const { profile } = useAuth();
+  const [stats, setStats] = useState({
+    totalStudents: '0',
+    departments: '0',
+    activeSubjects: '0'
+  });
+  const [deptDistribution, setDeptDistribution] = useState<any[]>([]);
+
+  useEffect(() => {
+    // Fetch Students
+    const studentsQuery = query(collection(db, 'users'), where('role', '==', 'student'));
+    const unsubscribeStudents = onSnapshot(studentsQuery, (snapshot) => {
+      setStats(prev => ({ ...prev, totalStudents: snapshot.docs.length.toLocaleString() }));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'users'));
+
+    // Fetch Departments
+    const deptQuery = collection(db, 'departments');
+    const unsubscribeDept = onSnapshot(deptQuery, (snapshot) => {
+      setStats(prev => ({ ...prev, departments: snapshot.docs.length.toString().padStart(2, '0') }));
+      
+      // Mock distribution for now
+      setDeptDistribution([
+        { name: 'CS', value: 400 },
+        { name: 'Mechanical', value: 300 },
+        { name: 'Electrical', value: 300 },
+        { name: 'Civil', value: 200 },
+      ]);
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'departments'));
+
+    // Fetch Subjects
+    const subQuery = collection(db, 'subjects');
+    const unsubscribeSub = onSnapshot(subQuery, (snapshot) => {
+      setStats(prev => ({ ...prev, activeSubjects: snapshot.docs.length.toString().padStart(2, '0') }));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'subjects'));
+
+    return () => {
+      unsubscribeStudents();
+      unsubscribeDept();
+      unsubscribeSub();
+    };
+  }, []);
 
   return (
     <motion.div 
@@ -94,10 +130,10 @@ export default function AdminDashboard() {
 
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-10">
             <div className="max-w-3xl">
-              <h1 className="text-6xl md:text-8xl font-playfair font-black tracking-tight text-emerald-900 leading-[0.9] mb-8">
+              <h1 className="text-4xl md:text-6xl font-playfair font-black tracking-tight text-emerald-900 leading-[0.9] mb-8">
                 {profile?.bannerName || 'Command Center'}
               </h1>
-              <p className="text-xl md:text-2xl text-emerald-800/60 font-montserrat font-medium leading-relaxed italic max-w-xl">
+              <p className="text-lg md:text-xl text-emerald-800/60 font-montserrat font-medium leading-relaxed italic max-w-xl">
                 {profile?.bannerDescription || 'Oversee institutional growth, manage security protocols, and optimize system performance with precision.'}
               </p>
             </div>
@@ -121,9 +157,9 @@ export default function AdminDashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {[
-          { label: 'Total Students', value: '1,240', icon: Users, color: 'text-blue-600', bg: 'bg-blue-500/10', trend: 'Active across all years' },
-          { label: 'Departments', value: '08', icon: Building2, color: 'text-emerald-600', bg: 'bg-emerald-500/10', trend: 'All systems operational' },
-          { label: 'Active Subjects', value: '42', icon: BookOpen, color: 'text-purple-600', bg: 'bg-purple-500/10', trend: 'Current semester' },
+          { label: 'Total Students', value: stats.totalStudents, icon: Users, color: 'text-blue-600', bg: 'bg-blue-500/10', trend: 'Active across all years' },
+          { label: 'Departments', value: stats.departments, icon: Building2, color: 'text-emerald-600', bg: 'bg-emerald-500/10', trend: 'All systems operational' },
+          { label: 'Active Subjects', value: stats.activeSubjects, icon: BookOpen, color: 'text-purple-600', bg: 'bg-purple-500/10', trend: 'Current semester' },
         ].map((stat, i) => (
           <motion.div
             key={stat.label}
@@ -136,7 +172,7 @@ export default function AdminDashboard() {
             </div>
             <div className="space-y-2">
               <p className="text-[10px] uppercase tracking-[0.2em] opacity-40 font-black font-montserrat">{stat.label}</p>
-              <p className="text-5xl font-playfair font-black tracking-tight text-emerald-900">{stat.value}</p>
+              <p className="text-4xl font-playfair font-black tracking-tight text-emerald-900">{stat.value}</p>
               <div className="flex items-center gap-2 pt-2">
                 <div className="w-1 h-1 rounded-full bg-emerald-500/30" />
                 <p className="text-[10px] font-bold text-emerald-800/40 uppercase tracking-widest">{stat.trend}</p>
@@ -154,7 +190,7 @@ export default function AdminDashboard() {
         >
           <div className="flex items-center justify-between mb-12">
             <div>
-              <h3 className="text-3xl font-playfair font-black text-emerald-900 mb-2">Departmental Reach</h3>
+              <h3 className="text-2xl md:text-3xl font-playfair font-black text-emerald-900 mb-2">Departmental Reach</h3>
               <p className="text-sm text-emerald-800/50 font-montserrat font-medium">Student distribution across major faculties</p>
             </div>
             <div className="p-4 bg-emerald-500/10 rounded-2xl">
@@ -166,7 +202,7 @@ export default function AdminDashboard() {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={data}
+                  data={deptDistribution.length > 0 ? deptDistribution : [{ name: 'No Data', value: 1 }]}
                   cx="50%"
                   cy="50%"
                   innerRadius={100}
@@ -175,7 +211,7 @@ export default function AdminDashboard() {
                   dataKey="value"
                   stroke="none"
                 >
-                  {data.map((entry, index) => (
+                  {deptDistribution.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
@@ -207,7 +243,7 @@ export default function AdminDashboard() {
         >
           <div className="flex items-center justify-between mb-12">
             <div>
-              <h3 className="text-3xl font-playfair font-black text-emerald-900 mb-2">System Logs</h3>
+              <h3 className="text-2xl md:text-3xl font-playfair font-black text-emerald-900 mb-2">System Logs</h3>
               <p className="text-sm text-emerald-800/50 font-montserrat font-medium">Real-time infrastructure monitoring</p>
             </div>
             <button className="p-4 bg-emerald-500/10 rounded-2xl hover:bg-emerald-500/20 transition-colors group">

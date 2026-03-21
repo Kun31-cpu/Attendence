@@ -25,6 +25,7 @@ interface UserProfile {
   };
   language?: string;
   twoFactorEnabled?: boolean;
+  photoURL?: string;
 }
 
 interface AuthContextType {

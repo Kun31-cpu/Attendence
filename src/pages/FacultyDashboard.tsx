@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence, Variants } from 'motion/react';
 import { cn } from '../lib/utils';
 import { 
   Users, 
@@ -28,19 +28,12 @@ import {
 } from 'recharts';
 import { useNotifications } from '../hooks/useNotifications';
 import { db } from '../firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, where, onSnapshot, getDocs } from 'firebase/firestore';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 
-const data = [
-  { name: 'Mon', attendance: 85, students: 102 },
-  { name: 'Tue', attendance: 88, students: 105 },
-  { name: 'Wed', attendance: 75, students: 90 },
-  { name: 'Thu', attendance: 92, students: 110 },
-  { name: 'Fri', attendance: 80, students: 96 },
-];
-
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -50,7 +43,7 @@ const containerVariants = {
   }
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
@@ -68,6 +61,55 @@ export default function FacultyDashboard() {
   const { notifications, markAsRead } = useNotifications();
   const [flagging, setFlagging] = useState<string | null>(null);
   const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    totalStudents: '0',
+    activeCourses: '0',
+    pendingTasks: '0',
+    nextLecture: '10:30'
+  });
+  const [attendanceTrend, setAttendanceTrend] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!profile?.uid) return;
+
+    // Fetch Students
+    const studentsQuery = query(collection(db, 'users'), where('role', '==', 'student'));
+    const unsubscribeStudents = onSnapshot(studentsQuery, (snapshot) => {
+      setStats(prev => ({ ...prev, totalStudents: snapshot.docs.length.toString() }));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'users'));
+
+    // Fetch Subjects
+    const subjectsQuery = query(collection(db, 'subjects'), where('facultyId', '==', profile.uid));
+    const unsubscribeSubjects = onSnapshot(subjectsQuery, (snapshot) => {
+      setStats(prev => ({ ...prev, activeCourses: snapshot.docs.length.toString().padStart(2, '0') }));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'subjects'));
+
+    // Fetch Submissions (Pending)
+    const submissionsQuery = query(collection(db, 'submissions'), where('status', '==', 'submitted'));
+    const labSubmissionsQuery = query(collection(db, 'lab_submissions'), where('score', '==', 0));
+    
+    const unsubscribeSubmissions = onSnapshot(submissionsQuery, (subSnap) => {
+      onSnapshot(labSubmissionsQuery, (labSnap) => {
+        const pending = subSnap.docs.length + labSnap.docs.length;
+        setStats(prev => ({ ...prev, pendingTasks: pending.toString() }));
+      });
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'submissions'));
+
+    // Mock trend data for now, but could be aggregated from attendance collection
+    setAttendanceTrend([
+      { name: 'Mon', attendance: 85 },
+      { name: 'Tue', attendance: 88 },
+      { name: 'Wed', attendance: 75 },
+      { name: 'Thu', attendance: 92 },
+      { name: 'Fri', attendance: 80 },
+    ]);
+
+    return () => {
+      unsubscribeStudents();
+      unsubscribeSubjects();
+      unsubscribeSubmissions();
+    };
+  }, [profile]);
 
   const handleFlagStudent = async (studentName: string) => {
     setFlagging(studentName);
@@ -82,7 +124,7 @@ export default function FacultyDashboard() {
         link: '/attendance'
       });
     } catch (err) {
-      console.error(err);
+      handleFirestoreError(err, OperationType.CREATE, 'notifications');
     } finally {
       setFlagging(null);
     }
@@ -124,10 +166,10 @@ export default function FacultyDashboard() {
 
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-10">
             <div className="max-w-3xl">
-              <h1 className="text-6xl md:text-8xl font-playfair font-black tracking-tight text-[#5A5A40] leading-[0.9] mb-8">
-                {profile?.bannerName || `Welcome, ${profile?.name?.split(' ')[0] || 'Professor'}`}
+              <h1 className="text-4xl md:text-6xl font-playfair font-black tracking-tight text-[#5A5A40] leading-[0.9] mb-8">
+                {profile?.bannerName || `Welcome, ${profile?.displayName?.split(' ')[0] || 'Professor'}`}
               </h1>
-              <p className="text-xl md:text-2xl text-[#5A5A40]/70 font-montserrat font-medium leading-relaxed italic max-w-xl">
+              <p className="text-lg md:text-xl text-[#5A5A40]/70 font-montserrat font-medium leading-relaxed italic max-w-xl">
                 {profile?.bannerDescription || 'Your academic command center. Orchestrate learning, track engagement, and inspire excellence.'}
               </p>
             </div>
@@ -152,10 +194,10 @@ export default function FacultyDashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {[
-          { label: 'Total Students', value: '124', icon: Users, color: 'text-blue-600', bg: 'bg-blue-500/10', trend: '+4% this month' },
-          { label: 'Active Courses', value: '04', icon: BookOpen, color: 'text-emerald-600', bg: 'bg-emerald-500/10', trend: 'Full capacity' },
-          { label: 'Pending Tasks', value: '12', icon: Target, color: 'text-purple-600', bg: 'bg-purple-500/10', trend: '3 high priority' },
-          { label: 'Next Lecture', value: '10:30', icon: Calendar, color: 'text-orange-600', bg: 'bg-orange-500/10', trend: 'Room 402B' },
+          { label: 'Total Students', value: stats.totalStudents, icon: Users, color: 'text-blue-600', bg: 'bg-blue-500/10', trend: 'Active across all years' },
+          { label: 'Active Courses', value: stats.activeCourses, icon: BookOpen, color: 'text-emerald-600', bg: 'bg-emerald-500/10', trend: 'Full capacity' },
+          { label: 'Pending Tasks', value: stats.pendingTasks, icon: Target, color: 'text-purple-600', bg: 'bg-purple-500/10', trend: 'Submissions to grade' },
+          { label: 'Next Lecture', value: stats.nextLecture, icon: Calendar, color: 'text-orange-600', bg: 'bg-orange-500/10', trend: 'Room 402B' },
         ].map((stat, i) => (
           <motion.div
             key={stat.label}
@@ -168,7 +210,7 @@ export default function FacultyDashboard() {
             </div>
             <div className="space-y-2">
               <p className="text-[10px] uppercase tracking-[0.2em] opacity-40 font-black font-montserrat">{stat.label}</p>
-              <p className="text-4xl font-playfair font-black tracking-tight text-[#5A5A40]">{stat.value}</p>
+              <p className="text-3xl font-playfair font-black tracking-tight text-[#5A5A40]">{stat.value}</p>
               <div className="flex items-center gap-2 pt-2">
                 <div className="w-1 h-1 rounded-full bg-[#5A5A40]/30" />
                 <p className="text-[10px] font-bold text-[#5A5A40]/50 uppercase tracking-widest">{stat.trend}</p>
@@ -186,7 +228,7 @@ export default function FacultyDashboard() {
         >
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
             <div>
-              <h3 className="text-3xl font-playfair font-black text-[#5A5A40] mb-2">Attendance Analytics</h3>
+              <h3 className="text-2xl md:text-3xl font-playfair font-black text-[#5A5A40] mb-2">Attendance Analytics</h3>
               <p className="text-sm text-[#5A5A40]/50 font-montserrat font-medium">Weekly engagement overview across all batches</p>
             </div>
             <div className="flex items-center gap-3 px-6 py-3 bg-[#5A5A40]/5 rounded-2xl border border-[#5A5A40]/10">
@@ -197,7 +239,7 @@ export default function FacultyDashboard() {
           
           <div className="h-[450px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data}>
+              <AreaChart data={attendanceTrend}>
                 <defs>
                   <linearGradient id="colorAttendance" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#5A5A40" stopOpacity={0.3}/>
