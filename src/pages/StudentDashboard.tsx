@@ -131,276 +131,293 @@ export default function StudentDashboard() {
   }, [profile]);
 
   return (
-    <motion.div 
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-10 pb-12"
-    >
-      {/* Hero Section */}
-      <motion.div 
-        variants={itemVariants}
-        className="relative overflow-hidden rounded-[3.5rem] p-12 md:p-20 border border-white/30 shadow-2xl group bg-[#5A5A40]/5"
-      >
+    <div className="relative min-h-screen">
+      {/* Atmospheric Background */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <motion.div 
           animate={{ 
-            scale: [1, 1.1, 1],
-            rotate: [0, 5, 0],
+            scale: [1, 1.2, 1],
+            rotate: [0, 90, 0],
+            x: [0, 100, 0],
+            y: [0, 50, 0]
           }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute -top-24 -right-24 w-[500px] h-[500px] bg-[#5A5A40]/10 blur-[120px] rounded-full opacity-60" 
+          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+          className="absolute -top-[10%] -right-[10%] w-[70%] h-[70%] bg-accent/10 blur-[120px] rounded-full"
         />
-        
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-12">
-          <div className="max-w-2xl">
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-[#5A5A40]/10 border border-[#5A5A40]/20 mb-8"
-            >
-              <GraduationCap className="w-5 h-5 text-[#5A5A40]" />
-              <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#5A5A40]">Academic Excellence</span>
-            </motion.div>
-            
-            <h1 className="text-4xl md:text-6xl font-playfair font-black tracking-tight text-stone-900 leading-[0.9] mb-8">
-              {profile?.bannerName || `Hello, ${profile?.displayName?.split(' ')[0]}`}
-            </h1>
-            
-            <p className="text-lg text-stone-600 font-montserrat font-medium leading-relaxed max-w-xl italic">
-              {profile?.bannerDescription || "Your academic journey is a marathon, not a sprint. Track your progress and reach your full potential."}
-            </p>
-            
-            <div className="flex flex-wrap gap-4 mt-10">
-              <button 
-                onClick={() => navigate('/assignments')}
-                className="px-8 py-4 rounded-2xl bg-[#5A5A40] text-white font-montserrat font-bold text-sm flex items-center gap-3 hover:bg-[#4A4A30] transition-all shadow-xl shadow-[#5A5A40]/20 active:scale-95"
-              >
-                View Assignments <ArrowRight className="w-4 h-4" />
-              </button>
-              <button 
-                onClick={() => navigate('/labs')}
-                className="px-8 py-4 rounded-2xl bg-white/50 backdrop-blur-md border border-stone-200 text-stone-800 font-montserrat font-bold text-sm hover:bg-white/80 transition-all active:scale-95"
-              >
-                Lab Sessions
-              </button>
-            </div>
-          </div>
-          
-          <div className="hidden lg:block relative">
-            <div className="w-64 h-64 rounded-[3rem] bg-stone-100 border border-white/50 shadow-inner flex items-center justify-center overflow-hidden">
-              <div className="text-center">
-                <p className="text-6xl font-playfair font-black text-[#5A5A40]">{stats.attendance}</p>
-                <p className="text-xs font-montserrat font-black uppercase tracking-widest opacity-40 mt-2">Attendance</p>
-              </div>
-            </div>
-            {/* Decorative elements */}
-            <div className="absolute -top-4 -right-4 w-12 h-12 rounded-2xl bg-emerald-500 shadow-lg flex items-center justify-center text-white animate-bounce">
-              <TrendingUp className="w-6 h-6" />
-            </div>
-            <div className="absolute -bottom-4 -left-4 w-12 h-12 rounded-2xl bg-indigo-500 shadow-lg flex items-center justify-center text-white animate-pulse">
-              <Zap className="w-6 h-6" />
-            </div>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        {[
-          { label: 'Attendance', value: stats.attendance, icon: Calendar, color: 'text-blue-600', bg: 'bg-blue-500/10', border: 'border-blue-100/50' },
-          { label: 'Avg Marks', value: stats.avgMarks, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-500/10', border: 'border-emerald-100/50' },
-          { label: 'Labs Done', value: stats.labsDone, icon: CheckCircle2, color: 'text-purple-600', bg: 'bg-purple-500/10', border: 'border-purple-100/50' },
-          { label: 'Assignments', value: stats.pendingAssignments, icon: Clock, color: 'text-orange-600', bg: 'bg-orange-500/10', border: 'border-orange-100/50' },
-        ].map((stat, i) => (
-          <motion.div
-            key={stat.label}
-            variants={itemVariants}
-            whileHover={{ y: -8, scale: 1.02 }}
-            className={cn(
-              "bg-white/40 backdrop-blur-xl p-10 rounded-[3rem] border shadow-2xl transition-all group",
-              stat.border
-            )}
-          >
-            <div className={cn("w-16 h-16 rounded-3xl flex items-center justify-center mb-8 shadow-inner transition-transform group-hover:scale-110 duration-500", stat.bg)}>
-              <stat.icon className={cn("w-8 h-8", stat.color)} />
-            </div>
-            <p className="text-[10px] font-montserrat font-black uppercase tracking-[0.2em] opacity-40 mb-2">{stat.label}</p>
-            <p className="text-3xl font-playfair font-black tracking-tight text-stone-900">{stat.value}</p>
-          </motion.div>
-        ))}
+        <motion.div 
+          animate={{ 
+            scale: [1, 1.3, 1],
+            rotate: [0, -90, 0],
+            x: [0, -100, 0],
+            y: [0, -50, 0]
+          }}
+          transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+          className="absolute -bottom-[10%] -left-[10%] w-[60%] h-[60%] bg-blue-500/10 blur-[120px] rounded-full"
+        />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        {/* Performance Chart */}
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="relative z-10 space-y-6 pb-24 px-4 md:px-0"
+      >
+        {/* Hero Section */}
         <motion.div 
           variants={itemVariants}
-          className="lg:col-span-2 bg-white/40 backdrop-blur-xl p-12 rounded-[3.5rem] border border-white/50 shadow-2xl"
+          className="relative overflow-hidden rounded-[2.5rem] p-8 md:p-12 border border-white/20 shadow-2xl group bg-white/10 backdrop-blur-2xl"
         >
-          <div className="flex items-center justify-between mb-12">
-            <div>
-              <h3 className="text-2xl md:text-3xl font-playfair font-bold text-stone-900">Academic Performance</h3>
-              <p className="text-sm font-montserrat font-medium text-stone-500 mt-1">Comparison between attendance and marks</p>
+          <div className="relative z-10 flex flex-col gap-8">
+            <div className="max-w-2xl">
+              <motion.div 
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/20 border border-accent/30 mb-6"
+              >
+                <GraduationCap className="w-4 h-4 text-accent" />
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-accent">Academic Excellence</span>
+              </motion.div>
+              
+              <h1 className="text-4xl md:text-7xl font-playfair font-black tracking-tight text-white leading-[0.95] mb-6">
+                {profile?.bannerName || `Hello, ${profile?.displayName?.split(' ')[0]}`}
+              </h1>
+              
+              <p className="text-base md:text-xl text-white/70 font-montserrat font-medium leading-relaxed max-w-xl italic">
+                {profile?.bannerDescription || "Your academic journey is a marathon, not a sprint. Track your progress and reach your full potential."}
+              </p>
+              
+              <div className="flex flex-wrap gap-3 mt-8">
+                <button 
+                  onClick={() => navigate('/assignments')}
+                  className="flex-1 min-w-[140px] px-6 py-4 rounded-2xl bg-accent text-white font-montserrat font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-accent/80 transition-all shadow-xl shadow-accent/20 active:scale-95"
+                >
+                  Assignments <ArrowRight className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={() => navigate('/labs')}
+                  className="flex-1 min-w-[140px] px-6 py-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-white font-montserrat font-black text-xs uppercase tracking-widest hover:bg-white/20 transition-all active:scale-95"
+                >
+                  Lab Sessions
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-3 px-5 py-2.5 bg-[#5A5A40]/5 rounded-full border border-[#5A5A40]/10">
-              <div className="w-2 h-2 bg-[#5A5A40] rounded-full animate-pulse" />
-              <span className="text-[10px] font-montserrat font-black uppercase tracking-widest text-[#5A5A40]">Live Sync</span>
+            
+            <div className="flex items-center justify-between p-6 rounded-3xl bg-white/10 border border-white/10 lg:hidden">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-accent/20 flex items-center justify-center">
+                  <Calendar className="w-6 h-6 text-accent" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Attendance</p>
+                  <p className="text-xl font-playfair font-black text-white">{stats.attendance}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-emerald-400">
+                <TrendingUp className="w-4 h-4" />
+                <span className="text-[10px] font-black uppercase tracking-widest">On Track</span>
+              </div>
             </div>
-          </div>
-          
-          <div className="h-[400px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={performanceData.length > 0 ? performanceData : [{ name: 'No Data', marks: 0, attendance: 0 }]} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorAttendance" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#5A5A40" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#5A5A40" stopOpacity={0.1}/>
-                  </linearGradient>
-                  <linearGradient id="colorMarks" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#A8A878" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#A8A878" stopOpacity={0.1}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.03)" />
-                <XAxis 
-                  dataKey="name" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fontSize: 12, fontWeight: 600, fill: '#78716c' }}
-                  dy={10}
-                />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fontSize: 12, fontWeight: 600, fill: '#78716c' }}
-                />
-                <Tooltip 
-                  cursor={{ fill: 'rgba(90, 90, 64, 0.05)' }}
-                  contentStyle={{ 
-                    borderRadius: '24px', 
-                    border: '1px solid rgba(255,255,255,0.5)', 
-                    backdropFilter: 'blur(20px)',
-                    backgroundColor: 'rgba(255,255,255,0.8)',
-                    boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.15)',
-                    padding: '20px'
-                  }}
-                />
-                <Bar dataKey="attendance" fill="url(#colorAttendance)" radius={[12, 12, 0, 0]} barSize={32} />
-                <Bar dataKey="marks" fill="url(#colorMarks)" radius={[12, 12, 0, 0]} barSize={32} />
-              </BarChart>
-            </ResponsiveContainer>
           </div>
         </motion.div>
 
-        {/* Sidebar Section */}
-        <div className="space-y-10">
-          {/* Notifications */}
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { label: 'Attendance', value: stats.attendance, icon: Calendar, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
+            { label: 'Avg Marks', value: stats.avgMarks, icon: TrendingUp, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+            { label: 'Labs Done', value: stats.labsDone, icon: CheckCircle2, color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
+            { label: 'Assignments', value: stats.pendingAssignments, icon: Clock, color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
+          ].map((stat, i) => (
+            <motion.div
+              key={stat.label}
+              variants={itemVariants}
+              whileHover={{ y: -4 }}
+              className={cn(
+                "bg-white/10 backdrop-blur-xl p-6 rounded-[2rem] border transition-all group",
+                stat.border
+              )}
+            >
+              <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110 duration-500", stat.bg)}>
+                <stat.icon className={cn("w-6 h-6", stat.color)} />
+              </div>
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 mb-1">{stat.label}</p>
+              <p className="text-xl font-playfair font-black tracking-tight text-white">{stat.value}</p>
+            </motion.div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Performance Chart */}
           <motion.div 
             variants={itemVariants}
-            className="bg-white/40 backdrop-blur-xl p-10 rounded-[3.5rem] border border-white/50 shadow-2xl"
+            className="lg:col-span-2 bg-white/10 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/20"
           >
-            <div className="flex items-center justify-between mb-10">
-              <h3 className="text-2xl font-playfair font-bold text-stone-900 flex items-center gap-3">
-                <Bell className="w-6 h-6 text-[#5A5A40]" />
-                Updates
-              </h3>
-              {notifications.some(n => !n.read) && (
-                <span className="px-3 py-1 rounded-full bg-red-500 text-[10px] font-black text-white uppercase tracking-widest">New</span>
-              )}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+              <div>
+                <h3 className="text-xl font-playfair font-black text-white">Academic Performance</h3>
+                <p className="text-[10px] font-montserrat font-medium text-white/40 mt-1 uppercase tracking-widest">Attendance vs Marks Comparison</p>
+              </div>
+              <div className="flex items-center gap-3 px-4 py-2 bg-white/5 rounded-full border border-white/10 self-start">
+                <div className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse" />
+                <span className="text-[9px] font-black uppercase tracking-widest text-white/60">Live Sync</span>
+              </div>
             </div>
             
-            <div className="space-y-6">
-              {notifications.length === 0 ? (
-                <div className="text-center py-16">
-                  <div className="w-20 h-20 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Bell className="w-10 h-10 text-stone-300" />
-                  </div>
-                  <p className="text-stone-400 font-montserrat italic text-sm">All caught up!</p>
-                </div>
-              ) : (
-                <AnimatePresence mode="popLayout">
-                  {notifications.slice(0, 4).map((notification) => (
-                    <motion.div 
-                      layout
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      whileHover={{ x: 5 }}
-                      key={notification.id} 
-                      className={cn(
-                        "flex gap-5 p-6 rounded-[2rem] border transition-all cursor-pointer group",
-                        notification.read ? "bg-white/20 border-white/20" : "bg-[#5A5A40]/5 border-[#5A5A40]/10 shadow-sm"
-                      )}
-                      onClick={() => !notification.read && markAsRead(notification.id)}
-                    >
-                      <div className={cn(
-                        "w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:rotate-6 duration-500",
-                        notification.type === 'warning' ? 'bg-red-500/10 text-red-600' : 
-                        notification.type === 'assignment' ? 'bg-blue-500/10 text-blue-600' : 'bg-emerald-500/10 text-emerald-600'
-                      )}>
-                        <AlertCircle className="w-7 h-7" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-montserrat font-black text-sm tracking-tight text-stone-800 mb-1 truncate">{notification.title}</p>
-                        <p className="text-xs text-stone-500 font-medium line-clamp-2 leading-relaxed">{notification.message}</p>
-                        <div className="flex items-center gap-2 mt-4">
-                          <Clock className="w-3.5 h-3.5 text-stone-300" />
-                          <p className="text-[10px] font-montserrat font-bold uppercase tracking-widest text-stone-400">
-                            {notification.createdAt?.toDate ? formatDistanceToNow(notification.createdAt.toDate(), { addSuffix: true }) : 'Just now'}
-                          </p>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              )}
+            <div className="h-[250px] md:h-[350px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={performanceData.length > 0 ? performanceData : [{ name: 'No Data', marks: 0, attendance: 0 }]} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorAttendance" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#5A5A40" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#5A5A40" stopOpacity={0.1}/>
+                    </linearGradient>
+                    <linearGradient id="colorMarks" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#A8A878" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#A8A878" stopOpacity={0.1}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                  <XAxis 
+                    dataKey="name" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fontSize: 10, fontWeight: 600, fill: 'rgba(255,255,255,0.3)' }}
+                    dy={10}
+                  />
+                  <YAxis 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fontSize: 10, fontWeight: 600, fill: 'rgba(255,255,255,0.3)' }}
+                  />
+                  <Tooltip 
+                    cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+                    contentStyle={{ 
+                      borderRadius: '20px', 
+                      border: '1px solid rgba(255,255,255,0.1)', 
+                      backdropFilter: 'blur(20px)',
+                      backgroundColor: 'rgba(10,5,2,0.8)',
+                      boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.5)',
+                      padding: '15px'
+                    }}
+                  />
+                  <Bar dataKey="attendance" fill="url(#colorAttendance)" radius={[8, 8, 0, 0]} barSize={24} />
+                  <Bar dataKey="marks" fill="url(#colorMarks)" radius={[8, 8, 0, 0]} barSize={24} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
-            
-            <button 
-              onClick={() => navigate('/notifications')}
-              className="w-full mt-10 py-5 rounded-2xl bg-[#5A5A40]/5 text-[#5A5A40] font-montserrat font-black text-xs uppercase tracking-[0.2em] hover:bg-[#5A5A40]/10 transition-all active:scale-95"
-            >
-              View All Activity
-            </button>
           </motion.div>
 
-          {/* Goal Progress */}
-          <motion.div 
-            variants={itemVariants}
-            className="bg-white/40 backdrop-blur-xl p-10 rounded-[3.5rem] border border-white/50 shadow-2xl"
-          >
-            <h3 className="text-2xl font-playfair font-bold text-stone-900 mb-10 flex items-center gap-3">
-              <Target className="w-6 h-6 text-[#5A5A40]" />
-              Learning Path
-            </h3>
-            <div className="space-y-8">
-              {[
-                { name: 'Mathematics', progress: 75, color: 'bg-blue-500' },
-                { name: 'Physics', progress: 60, color: 'bg-[#5A5A40]' },
-                { name: 'Computer Science', progress: 90, color: 'bg-emerald-500' },
-              ].map((course, i) => (
-                <div key={i} className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-montserrat font-black tracking-tight text-stone-800">{course.name}</span>
-                    <span className="text-xs font-montserrat font-bold text-stone-400">{course.progress}%</span>
+          {/* Sidebar Section */}
+          <div className="space-y-6">
+            {/* Notifications */}
+            <motion.div 
+              variants={itemVariants}
+              className="bg-white/10 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/20"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-lg font-playfair font-black text-white flex items-center gap-3">
+                  <Bell className="w-5 h-5 text-accent" />
+                  Updates
+                </h3>
+                {notifications.some(n => !n.read) && (
+                  <span className="px-2 py-0.5 rounded-full bg-red-500 text-[8px] font-black text-white uppercase tracking-widest">New</span>
+                )}
+              </div>
+              
+              <div className="space-y-4">
+                {notifications.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Bell className="w-8 h-8 text-white/10" />
+                    </div>
+                    <p className="text-white/30 font-montserrat italic text-xs">All caught up!</p>
                   </div>
-                  <div className="h-4 bg-stone-100 rounded-full overflow-hidden p-1 shadow-inner">
-                    <motion.div 
-                      initial={{ width: 0 }}
-                      animate={{ width: `${course.progress}%` }}
-                      transition={{ duration: 1.5, delay: 0.5 + i * 0.2, ease: "circOut" }}
-                      className={cn("h-full rounded-full shadow-lg", course.color)}
-                    />
+                ) : (
+                  <AnimatePresence mode="popLayout">
+                    {notifications.slice(0, 3).map((notification) => (
+                      <motion.div 
+                        layout
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        whileHover={{ x: 5 }}
+                        key={notification.id} 
+                        className={cn(
+                          "flex gap-4 p-4 rounded-2xl border transition-all cursor-pointer group",
+                          notification.read ? "bg-white/5 border-white/5" : "bg-accent/10 border-accent/20 shadow-sm"
+                        )}
+                        onClick={() => !notification.read && markAsRead(notification.id)}
+                      >
+                        <div className={cn(
+                          "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:rotate-6 duration-500",
+                          notification.type === 'warning' ? 'bg-red-500/10 text-red-400' : 
+                          notification.type === 'assignment' ? 'bg-blue-500/10 text-blue-400' : 'bg-emerald-500/10 text-emerald-400'
+                        )}>
+                          <AlertCircle className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-montserrat font-black text-xs tracking-tight text-white mb-0.5 truncate">{notification.title}</p>
+                          <p className="text-[10px] text-white/40 font-medium line-clamp-1 leading-relaxed">{notification.message}</p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <Clock className="w-3 h-3 text-white/20" />
+                            <p className="text-[8px] font-black uppercase tracking-widest text-white/20">
+                              {notification.createdAt?.toDate ? formatDistanceToNow(notification.createdAt.toDate(), { addSuffix: true }) : 'Just now'}
+                            </p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                )}
+              </div>
+              
+              <button 
+                onClick={() => navigate('/notifications')}
+                className="w-full mt-8 py-4 rounded-xl bg-white/5 text-white/60 font-black text-[10px] uppercase tracking-[0.2em] hover:bg-white/10 transition-all active:scale-95"
+              >
+                View All Activity
+              </button>
+            </motion.div>
+
+            {/* Goal Progress */}
+            <motion.div 
+              variants={itemVariants}
+              className="bg-white/10 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/20"
+            >
+              <h3 className="text-lg font-playfair font-black text-white mb-8 flex items-center gap-3">
+                <Target className="w-5 h-5 text-accent" />
+                Learning Path
+              </h3>
+              <div className="space-y-6">
+                {[
+                  { name: 'Mathematics', progress: 75, color: 'bg-blue-500' },
+                  { name: 'Physics', progress: 60, color: 'bg-accent' },
+                  { name: 'Computer Science', progress: 90, color: 'bg-emerald-500' },
+                ].map((course, i) => (
+                  <div key={i} className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-black tracking-tight text-white/80 uppercase">{course.name}</span>
+                      <span className="text-[10px] font-bold text-white/30">{course.progress}%</span>
+                    </div>
+                    <div className="h-2 bg-white/5 rounded-full overflow-hidden shadow-inner">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${course.progress}%` }}
+                        transition={{ duration: 1.5, delay: 0.5 + i * 0.2, ease: "circOut" }}
+                        className={cn("h-full rounded-full shadow-lg", course.color)}
+                      />
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-            <button className="w-full mt-10 py-5 rounded-2xl border border-stone-200 text-stone-600 font-montserrat font-black text-xs uppercase tracking-[0.2em] hover:bg-stone-50 transition-all active:scale-95">
-              Explore Curriculum
-            </button>
-          </motion.div>
+                ))}
+              </div>
+              <button className="w-full mt-8 py-4 rounded-xl border border-white/10 text-white/40 font-black text-[10px] uppercase tracking-[0.2em] hover:bg-white/5 transition-all active:scale-95">
+                Explore Curriculum
+              </button>
+            </motion.div>
+          </div>
         </div>
-      </div>
-    </motion.div>
+      </motion.div>
+    </div>
   );
 }

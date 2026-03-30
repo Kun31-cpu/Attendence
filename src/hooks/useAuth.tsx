@@ -77,16 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           if (docSnap.exists()) {
             const existingProfile = docSnap.data() as UserProfile;
-            const isAllowedEmail = user.email === ADMIN_EMAIL;
-            
-            // Force student role if not the allowed email but somehow has admin/faculty role
-            if (!isAllowedEmail && (existingProfile.role === 'admin' || existingProfile.role === 'faculty')) {
-              const updatedProfile = { ...existingProfile, role: 'student' as const };
-              await updateDoc(docRef, { role: 'student' });
-              setProfile(updatedProfile);
-            } else {
-              setProfile(existingProfile);
-            }
+            setProfile(existingProfile);
           } else {
             // Create default profile if not exists
             const isAllowedEmail = user.email === ADMIN_EMAIL;
@@ -152,12 +143,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updateRole = async (role: 'admin' | 'faculty' | 'student') => {
     if (user) {
-      const isAllowedEmail = user.email === ADMIN_EMAIL;
-      // Only allow role change to admin/faculty if it's the allowed email
-      if (!isAllowedEmail && (role === 'admin' || role === 'faculty')) {
-        throw new Error('Unauthorized role change');
-      }
-      
       const docRef = doc(db, 'users', user.uid);
       await setDoc(docRef, { role }, { merge: true });
       setProfile(prev => prev ? { ...prev, role } : null);

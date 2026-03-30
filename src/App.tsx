@@ -16,6 +16,8 @@ import LabDetailsPage from './pages/LabDetailsPage';
 import NotificationsPage from './pages/NotificationsPage';
 import UserManagementPage from './pages/UserManagementPage';
 
+import { Toaster } from 'sonner';
+
 function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) {
   const { user, profile, loading } = useAuth();
 
@@ -71,6 +73,7 @@ function ThemeHandler() {
 export default function App() {
   return (
     <AuthProvider>
+      <Toaster position="top-right" richColors />
       <ThemeHandler />
       <Router>
         <Routes>

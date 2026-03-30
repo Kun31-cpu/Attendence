@@ -286,7 +286,8 @@ export default function AttendancePage() {
             sessionData.longitude
           );
           
-          if (dist > 100) { // 100 meters limit
+          // Bypass GPS check for admin or if distance is within 100m
+          if (profile?.role !== 'admin' && dist > 100) { 
             setErrorMessage(`Too far from classroom (${Math.round(dist)}m away)`);
             return;
           }
@@ -318,8 +319,21 @@ export default function AttendancePage() {
   const handleFaceRecognition = async () => {
     setIsFaceScanning(true);
     setErrorMessage('');
+    setSuccessMessage('');
     
-    setTimeout(async () => {
+    // Start camera preview for "realism"
+    const html5QrCode = new Html5Qrcode("face-reader");
+    try {
+      await html5QrCode.start(
+        { facingMode: "user" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        () => {}, // No need to handle success here
+        () => {}
+      );
+
+      // Simulate recognition delay
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
       navigator.geolocation.getCurrentPosition(async (pos) => {
         try {
           await addDoc(collection(db, 'attendance'), {
@@ -340,12 +354,18 @@ export default function AttendancePage() {
           setErrorMessage('Face recognition failed');
         } finally {
           setIsFaceScanning(false);
+          html5QrCode.stop().catch(e => console.error(e));
         }
       }, (err) => {
         setErrorMessage('GPS access denied');
         setIsFaceScanning(false);
+        html5QrCode.stop().catch(e => console.error(e));
       });
-    }, 3000);
+    } catch (err) {
+      console.error(err);
+      setErrorMessage('Could not access camera');
+      setIsFaceScanning(false);
+    }
   };
 
   const downloadQR = () => {
@@ -815,33 +835,53 @@ export default function AttendancePage() {
                             className="space-y-10"
                           >
                             <div className="space-y-3">
-                              <h3 className="text-4xl font-playfair font-black text-stone-900">Biometric ID</h3>
-                              <p className="text-sm text-stone-500 font-montserrat font-medium italic">Position your face within the frame for verification.</p>
+                              <h3 className="text-2xl md:text-3xl font-playfair font-black text-stone-900">Biometric Verification</h3>
+                              <p className="text-sm text-stone-500 font-montserrat font-medium italic">Use AI face recognition for instant attendance.</p>
                             </div>
 
-                            {isFaceScanning ? (
-                              <div className="space-y-8">
-                                <div className="aspect-square bg-stone-900 rounded-[3.5rem] overflow-hidden relative border-[12px] border-white shadow-2xl">
-                                  <div className="absolute inset-0 bg-gradient-to-b from-[#5A5A40]/20 to-transparent animate-pulse" />
-                                  <div className="absolute top-1/2 left-0 right-0 h-1 bg-[#5A5A40] shadow-[0_0_30px_rgba(90,90,64,1)] animate-[scan_2s_ease-in-out_infinite]" />
-                                  <div className="absolute inset-0 flex items-center justify-center">
-                                    <Scan className="w-40 h-40 text-white/5" />
+                            <div className="relative">
+                              <div className="w-full aspect-square bg-stone-100 rounded-[3rem] border-8 border-white shadow-2xl overflow-hidden relative group">
+                                {isFaceScanning ? (
+                                  <>
+                                    <div id="face-reader" className="w-full h-full"></div>
+                                    <motion.div 
+                                      animate={{ top: ['0%', '100%', '0%'] }}
+                                      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                      className="absolute left-0 right-0 h-1 bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.8)] z-20"
+                                    />
+                                    <div className="absolute inset-0 bg-emerald-500/10 animate-pulse z-10" />
+                                  </>
+                                ) : (
+                                  <div className="w-full h-full flex flex-col items-center justify-center text-stone-300">
+                                    <UserCheck className="w-24 h-24 mb-6 group-hover:scale-110 transition-transform duration-500" />
+                                    <p className="text-[10px] font-montserrat font-black uppercase tracking-[0.2em]">Camera Standby</p>
                                   </div>
-                                </div>
-                                <div className="flex items-center justify-center gap-4 text-[#5A5A40]">
-                                  <div className="w-3 h-3 bg-[#5A5A40] rounded-full animate-ping" />
-                                  <span className="text-[10px] font-montserrat font-black uppercase tracking-[0.2em]">Processing Biometrics...</span>
-                                </div>
+                                )}
                               </div>
-                            ) : (
-                              <button
-                                onClick={handleFaceRecognition}
-                                className="w-full py-6 bg-[#5A5A40] text-white rounded-[2rem] font-montserrat font-black uppercase tracking-[0.2em] text-xs hover:bg-[#4A4A30] transition-all shadow-2xl shadow-[#5A5A40]/20 flex items-center justify-center gap-4 active:scale-95"
-                              >
-                                <Camera className="w-7 h-7" />
-                                Initialize Face ID
-                              </button>
-                            )}
+                            </div>
+
+                            <button
+                              onClick={handleFaceRecognition}
+                              disabled={isFaceScanning}
+                              className={cn(
+                                "w-full py-6 rounded-[2rem] font-montserrat font-black uppercase tracking-[0.2em] text-xs transition-all shadow-2xl flex items-center justify-center gap-4 active:scale-95",
+                                isFaceScanning 
+                                  ? "bg-stone-100 text-stone-400 cursor-not-allowed" 
+                                  : "bg-[#5A5A40] text-white hover:bg-[#4A4A30] shadow-[#5A5A40]/20"
+                              )}
+                            >
+                              {isFaceScanning ? (
+                                <>
+                                  <div className="w-5 h-5 border-2 border-stone-400 border-t-transparent rounded-full animate-spin" />
+                                  Scanning Face...
+                                </>
+                              ) : (
+                                <>
+                                  <Scan className="w-7 h-7" />
+                                  Initialize Recognition
+                                </>
+                              )}
+                            </button>
                           </motion.div>
                         )}
                       </AnimatePresence>

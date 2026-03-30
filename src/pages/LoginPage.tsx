@@ -116,7 +116,7 @@ export default function LoginPage() {
             y: [0, -50, 0]
           }}
           transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-          className="absolute -top-48 -left-48 w-[800px] h-[800px] bg-[#5A5A40]/20 blur-[120px] rounded-full" 
+          className="absolute -top-48 -left-48 w-[800px] h-[800px] bg-accent/20 blur-[120px] rounded-full" 
         />
         <motion.div 
           animate={{ 
@@ -126,7 +126,7 @@ export default function LoginPage() {
             y: [0, 100, 0]
           }}
           transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
-          className="absolute -bottom-48 -right-48 w-[1000px] h-[1000px] bg-[#F27D26]/10 blur-[150px] rounded-full" 
+          className="absolute -bottom-48 -right-48 w-[1000px] h-[1000px] bg-blue-500/10 blur-[150px] rounded-full" 
         />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0a0502]/40 to-[#0a0502]" />
       </div>
@@ -139,12 +139,12 @@ export default function LoginPage() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -40, scale: 0.95 }}
             transition={{ type: "spring", stiffness: 100, damping: 20 }}
-            className="max-w-md w-full bg-white/5 backdrop-blur-3xl rounded-[3.5rem] shadow-2xl p-10 md:p-14 text-center border border-white/10 relative z-10"
+            className="max-w-md w-full glass-card text-center relative z-10"
           >
             <div className="flex justify-center mb-10">
               <motion.div 
                 whileHover={{ rotate: 12, scale: 1.1 }}
-                className="w-24 h-24 bg-gradient-to-br from-[#5A5A40] to-[#4A4A30] rounded-[2.5rem] flex items-center justify-center shadow-2xl shadow-[#5A5A40]/40 relative group"
+                className="w-24 h-24 bg-gradient-to-br from-accent to-accent/80 rounded-[2.5rem] flex items-center justify-center shadow-2xl shadow-accent/40 relative group"
               >
                 <div className="absolute inset-0 bg-white/20 rounded-[2.5rem] scale-0 group-hover:scale-100 transition-transform duration-500" />
                 <GraduationCap className="w-12 h-12 text-white relative z-10" />
@@ -321,7 +321,7 @@ export default function LoginPage() {
             key="setup"
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
-            className="max-w-md w-full bg-white/5 backdrop-blur-3xl rounded-[3.5rem] shadow-2xl p-10 md:p-14 border border-white/10 relative z-10"
+            className="max-w-md w-full glass-card relative z-10"
           >
             <div className="text-center mb-12">
               <div className="w-24 h-24 bg-amber-500/10 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-inner">
@@ -371,7 +371,7 @@ export default function LoginPage() {
             key="verify"
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
-            className="max-w-md w-full bg-white/5 backdrop-blur-3xl rounded-[3.5rem] shadow-2xl p-10 md:p-14 border border-white/10 relative z-10"
+            className="max-w-md w-full glass-card relative z-10"
           >
             <div className="text-center mb-12">
               <div className="w-24 h-24 bg-blue-500/10 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-inner">
