@@ -15,8 +15,7 @@ import AssignmentDetailsPage from './pages/AssignmentDetailsPage';
 import LabDetailsPage from './pages/LabDetailsPage';
 import NotificationsPage from './pages/NotificationsPage';
 import UserManagementPage from './pages/UserManagementPage';
-
-import { Toaster } from 'sonner';
+import SubjectsPage from './pages/SubjectsPage';
 
 function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) {
   const { user, profile, loading } = useAuth();
@@ -73,7 +72,6 @@ function ThemeHandler() {
 export default function App() {
   return (
     <AuthProvider>
-      <Toaster position="top-right" richColors />
       <ThemeHandler />
       <Router>
         <Routes>
@@ -138,6 +136,13 @@ export default function App() {
             <ProtectedRoute>
               <DashboardLayout>
                 <NotificationsPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/subjects" element={
+            <ProtectedRoute allowedRoles={['admin', 'faculty']}>
+              <DashboardLayout>
+                <SubjectsPage />
               </DashboardLayout>
             </ProtectedRoute>
           } />

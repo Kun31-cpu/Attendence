@@ -1,6 +1,6 @@
 {
   "name": "EduTrack Pro",
-  "description": "Smart Faculty & Classroom Automation Platform for universities, featuring automated attendance, marks calculation, assignment management, and YouTube integration.",
+  "description": "Smart Faculty & Classroom Automation Platform for universities, featuring automated attendance, marks calculation, assignment management, subject-faculty assignment, and YouTube integration.",
   "requestFramePermissions": [
     "camera",
     "geolocation"
