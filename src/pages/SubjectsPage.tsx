@@ -13,7 +13,8 @@ import {
   Building,
   ChevronRight,
   X,
-  CheckCircle2
+  CheckCircle2,
+  Calendar
 } from 'lucide-react';
 import { db } from '../firebase';
 import { 
@@ -59,8 +60,10 @@ export default function SubjectsPage() {
   const { profile } = useAuth();
   const [subjects, setSubjects] = useState<any[]>([]);
   const [facultyMembers, setFacultyMembers] = useState<any[]>([]);
+  const [assignments, setAssignments] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [facultyFilter, setFacultyFilter] = useState<string>('all');
+  const [deadlineFilter, setDeadlineFilter] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSubject, setEditingSubject] = useState<any>(null);
   const [codeError, setCodeError] = useState<string | null>(null);
@@ -88,9 +91,17 @@ export default function SubjectsPage() {
       handleFirestoreError(err, OperationType.LIST, 'users');
     });
 
+    const assignmentsQ = query(collection(db, 'assignments'), orderBy('deadline', 'asc'));
+    const unsubscribeAssignments = onSnapshot(assignmentsQ, (snapshot) => {
+      setAssignments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (err) => {
+      handleFirestoreError(err, OperationType.LIST, 'assignments');
+    });
+
     return () => {
       unsubscribeSubjects();
       unsubscribeFaculty();
+      unsubscribeAssignments();
     };
   }, []);
 
@@ -163,12 +174,43 @@ export default function SubjectsPage() {
     setIsModalOpen(true);
   };
 
+  const getUpcomingDeadline = (subjectId: string) => {
+    const now = new Date();
+    const subjectAssignments = assignments.filter(a => a.subjectId === subjectId);
+    const upcoming = subjectAssignments
+      .map(a => ({ ...a, deadlineDate: a.deadline?.toDate ? a.deadline.toDate() : new Date(a.deadline) }))
+      .filter(a => a.deadlineDate > now)
+      .sort((a, b) => a.deadlineDate.getTime() - b.deadlineDate.getTime());
+    
+    return upcoming.length > 0 ? upcoming[0].deadlineDate : null;
+  };
+
   const filteredSubjects = subjects.filter(subject => {
     const matchesSearch = 
       subject.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       subject.code.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFaculty = facultyFilter === 'all' || subject.facultyId === facultyFilter;
-    return matchesSearch && matchesFaculty;
+    
+    const upcomingDeadline = getUpcomingDeadline(subject.id);
+    let matchesDeadline = true;
+    
+    if (deadlineFilter !== 'all') {
+      if (!upcomingDeadline) {
+        matchesDeadline = false;
+      } else {
+        const now = new Date();
+        const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
+        
+        if (deadlineFilter === 'this-week') {
+          matchesDeadline = upcomingDeadline <= nextWeek;
+        } else if (deadlineFilter === 'this-month') {
+          matchesDeadline = upcomingDeadline <= nextMonth;
+        }
+      }
+    }
+
+    return matchesSearch && matchesFaculty && matchesDeadline;
   });
 
   const getFacultyName = (facultyId: string) => {
@@ -242,6 +284,18 @@ export default function SubjectsPage() {
             ))}
           </select>
         </div>
+        <div className="relative group min-w-[240px]">
+          <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-white transition-colors" />
+          <select 
+            className="w-full pl-12 pr-8 py-5 rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 text-white font-bold text-xs uppercase tracking-widest outline-none focus:ring-4 focus:ring-white/5 transition-all appearance-none cursor-pointer"
+            value={deadlineFilter}
+            onChange={(e) => setDeadlineFilter(e.target.value)}
+          >
+            <option value="all" className="bg-black text-white">All Deadlines</option>
+            <option value="this-week" className="bg-black text-white">Due This Week</option>
+            <option value="this-month" className="bg-black text-white">Due This Month</option>
+          </select>
+        </div>
       </motion.div>
 
       {/* Subjects Grid */}
@@ -313,6 +367,24 @@ export default function SubjectsPage() {
                   <div>
                     <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">Department</p>
                     <p className="text-xs font-bold text-white">{subject.departmentId || 'General'}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center border border-white/10">
+                    <Calendar className="w-4 h-4 text-gray-400" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">Upcoming Assignment</p>
+                    <p className={cn(
+                      "text-xs font-bold",
+                      getUpcomingDeadline(subject.id) ? "text-white" : "text-gray-500 italic"
+                    )}>
+                      {getUpcomingDeadline(subject.id) 
+                        ? getUpcomingDeadline(subject.id)?.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                        : 'No upcoming assignments'
+                      }
+                    </p>
                   </div>
                 </div>
               </div>

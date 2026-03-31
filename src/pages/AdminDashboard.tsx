@@ -23,9 +23,10 @@ import {
   Tooltip 
 } from 'recharts';
 import { db } from '../firebase';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 import { useNavigate } from 'react-router-dom';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
 
 const COLORS = ['#10B981', '#34D399', '#6EE7B7', '#A7F3D0'];
 
@@ -61,6 +62,31 @@ export default function AdminDashboard() {
     activeSubjects: '0'
   });
   const [deptDistribution, setDeptDistribution] = useState<any[]>([]);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  const handleQuickAssign = async () => {
+    setIsUpdating(true);
+    setUpdateStatus('idle');
+    try {
+      // Subject ID: subj_id_123, Faculty ID: fac_id_456
+      // Using setDoc with merge: true to create the document if it doesn't exist
+      await setDoc(doc(db, 'subjects', 'subj_id_123'), {
+        name: 'Introduction to Programming',
+        code: 'CS101',
+        facultyId: 'fac_id_456',
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+      setUpdateStatus('success');
+      setTimeout(() => setUpdateStatus('idle'), 3000);
+    } catch (err) {
+      console.error('Quick assign failed:', err);
+      setUpdateStatus('error');
+      setTimeout(() => setUpdateStatus('idle'), 3000);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   useEffect(() => {
     // Fetch Students
@@ -155,6 +181,56 @@ export default function AdminDashboard() {
           </div>
         </div>
       </motion.div>
+
+      {/* Quick Actions Section */}
+      <motion.section variants={itemVariants} className="space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center border border-white/10">
+            <Activity className="w-5 h-5 text-white" />
+          </div>
+          <h2 className="text-xl font-serif font-bold text-white uppercase tracking-widest">Quick Actions</h2>
+        </div>
+
+        <div className="bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-8 border border-white/10 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
+            <Database className="w-32 h-32 text-white" />
+          </div>
+          
+          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="space-y-2 text-center md:text-left">
+              <h3 className="text-xl font-bold text-white">Assign Dr. Emily Carter</h3>
+              <p className="text-sm text-gray-400 font-serif italic max-w-md">
+                Automatically assign Faculty ID: fac_id_456 to Subject ID: subj_id_123 (Introduction to Programming).
+              </p>
+            </div>
+
+            <button 
+              onClick={handleQuickAssign}
+              disabled={isUpdating}
+              className={cn(
+                "px-10 py-5 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center gap-3 active:scale-95",
+                updateStatus === 'success' ? "bg-emerald-500 text-white" :
+                updateStatus === 'error' ? "bg-red-500 text-white" :
+                "bg-white text-black hover:bg-gray-200"
+              )}
+            >
+              {isUpdating ? (
+                <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+              ) : updateStatus === 'success' ? (
+                <CheckCircle2 className="w-4 h-4" />
+              ) : updateStatus === 'error' ? (
+                <AlertCircle className="w-4 h-4" />
+              ) : (
+                <Database className="w-4 h-4" />
+              )}
+              {isUpdating ? 'Updating...' : 
+               updateStatus === 'success' ? 'Assigned Successfully' : 
+               updateStatus === 'error' ? 'Update Failed' : 
+               'Run Assignment Task'}
+            </button>
+          </div>
+        </div>
+      </motion.section>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
