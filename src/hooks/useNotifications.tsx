@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   collection, 
   query, 
@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from './useAuth';
+import { toast } from 'sonner';
 
 export interface Notification {
   id: string;
@@ -29,12 +30,16 @@ export function useNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const prevNotificationsRef = useRef<string[]>([]);
+  const isInitialLoad = useRef(true);
 
   useEffect(() => {
     if (!user) {
       setNotifications([]);
       setUnreadCount(0);
       setLoading(false);
+      prevNotificationsRef.current = [];
+      isInitialLoad.current = true;
       return;
     }
 
@@ -48,14 +53,38 @@ export function useNotifications() {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const notifs: Notification[] = [];
       let unread = 0;
+      const newIds: string[] = [];
+
       snapshot.forEach((doc) => {
         const data = doc.data() as Omit<Notification, 'id'>;
         notifs.push({ id: doc.id, ...data });
+        newIds.push(doc.id);
         if (!data.read) unread++;
       });
+
+      // Show toast for new unread notifications
+      if (!isInitialLoad.current) {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === 'added') {
+            const data = change.doc.data() as Notification;
+            if (!data.read) {
+              toast(data.title, {
+                description: data.message,
+                action: data.link ? {
+                  label: 'View',
+                  onClick: () => window.location.href = data.link!
+                } : undefined
+              });
+            }
+          }
+        });
+      }
+
       setNotifications(notifs);
       setUnreadCount(unread);
       setLoading(false);
+      prevNotificationsRef.current = newIds;
+      isInitialLoad.current = false;
     }, (error) => {
       console.error("Error fetching notifications:", error);
       setLoading(false);

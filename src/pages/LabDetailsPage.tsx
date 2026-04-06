@@ -107,8 +107,22 @@ export default function LabDetailsPage() {
         studentName: profile.displayName,
         githubLink: repoUrl,
         completedAt: serverTimestamp(),
-        score: 0
+        score: 0,
+        facultyId: lab?.facultyId
       });
+
+      if (lab?.facultyId) {
+        await addDoc(collection(db, 'notifications'), {
+          userId: lab.facultyId,
+          title: 'New Lab Submission',
+          message: `${profile.displayName || 'A student'} has submitted the lab "${lab.title}".`,
+          type: 'assignment',
+          read: false,
+          createdAt: serverTimestamp(),
+          link: `/labs/${id}`
+        });
+      }
+
       toast.success('Lab submitted successfully!');
       navigate('/labs');
     } catch (err) {
